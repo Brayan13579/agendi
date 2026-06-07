@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Agendi",
+    "slug": "agendi-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.agendi.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      },
+      "package": "com.agendi.app"
+    },
+    "scheme": "agendi",
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
