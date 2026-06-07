@@ -131,6 +131,16 @@ export default function AgendaScreen() {
               </TouchableOpacity>
             </View>
           )}
+          {item.status === 'confirmed' && (
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.cancelBtn]}
+                onPress={() => handleStatusChange(item, 'cancelled')}
+              >
+                <Ionicons name="close" size={16} color={colors.white} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     )
