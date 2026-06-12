@@ -136,4 +136,86 @@ function formatDaySlotsMessage(day) {
   return { message }
 }
 
-module.exports = { getAvailableSlots, formatDaysMessage, formatDaySlotsMessage, formatDate, formatTime }
+// Obtener el horario completo de un día: todos los slots (libres, ocupados y citas)
+async function getDaySchedule(barberId = 'default', dateStr) {
+  const config = await getScheduleConfig(barberId)
+  if (!config) return { dayActive: false, slots: [] }
+
+  const date = new Date(`${dateStr}T00:00:00`)
+  const dayName = DAYS[date.getDay()]
+  const dayConfig = config.weeklySchedule?.[dayName]
+
+  if (!dayConfig || !dayConfig.active) return { dayActive: false, slots: [] }
+
+  const slotDuration = config.slotDuration || 30
+  const [startHour, startMin] = dayConfig.start.split(':').map(Number)
+  const [endHour, endMin] = dayConfig.end.split(':').map(Number)
+
+  const db = getDb()
+  const start = new Date(`${dateStr}T00:00:00`)
+  const end = new Date(`${dateStr}T23:59:59.999`)
+
+  const apptSnapshot = await db.collection('appointments')
+    .where('datetime', '>=', start.toISOString())
+    .where('datetime', '<=', end.toISOString())
+    .get()
+
+  const appointmentsByDatetime = new Map()
+  apptSnapshot.docs.forEach(doc => {
+    const data = doc.data()
+    if (data.status !== 'cancelled') {
+      appointmentsByDatetime.set(data.datetime, { id: doc.id, ...data })
+    }
+  })
+
+  const blockedSnapshot = await db.collection('blockedSlots')
+    .where('barberId', '==', barberId)
+    .where('datetime', '>=', start.toISOString())
+    .where('datetime', '<=', end.toISOString())
+    .get()
+
+  const blockedByDatetime = new Map()
+  blockedSnapshot.docs.forEach(doc => {
+    blockedByDatetime.set(doc.data().datetime, { id: doc.id, ...doc.data() })
+  })
+
+  const slots = []
+  let currentHour = startHour
+  let currentMin = startMin
+
+  while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+    const slotDate = new Date(date)
+    slotDate.setHours(currentHour, currentMin, 0, 0)
+    const isoString = slotDate.toISOString()
+
+    let status = 'free'
+    let appointment = null
+    let blockedId = null
+
+    if (appointmentsByDatetime.has(isoString)) {
+      status = 'booked'
+      appointment = appointmentsByDatetime.get(isoString)
+    } else if (blockedByDatetime.has(isoString)) {
+      status = 'blocked'
+      blockedId = blockedByDatetime.get(isoString).id
+    }
+
+    slots.push({
+      datetime: isoString,
+      time: formatTime(currentHour, currentMin),
+      status,
+      appointment,
+      blockedId
+    })
+
+    currentMin += slotDuration
+    if (currentMin >= 60) {
+      currentHour += Math.floor(currentMin / 60)
+      currentMin = currentMin % 60
+    }
+  }
+
+  return { dayActive: true, slots }
+}
+
+module.exports = { getAvailableSlots, getDaySchedule, formatDaysMessage, formatDaySlotsMessage, formatDate, formatTime }

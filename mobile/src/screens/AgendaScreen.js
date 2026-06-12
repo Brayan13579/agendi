@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { format, addDays, subDays, isToday } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { getAppointments, updateAppointmentStatus, sendUrgentAlert } from '../services/api'
+import { getDaySchedule, updateAppointmentStatus, sendUrgentAlert, addBlockedSlot, removeBlockedSlot } from '../services/api'
 import { colors, spacing, radius } from '../services/theme'
 import alert from '../services/alert'
 
@@ -24,17 +24,17 @@ const STATUS_LABELS = {
 
 export default function AgendaScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [appointments, setAppointments] = useState([])
+  const [daySchedule, setDaySchedule] = useState({ dayActive: true, slots: [] })
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  const loadAppointments = useCallback(async (date) => {
+  const loadDaySchedule = useCallback(async (date) => {
     try {
       const dateStr = format(date, 'yyyy-MM-dd')
-      const data = await getAppointments(dateStr)
-      setAppointments(data || [])
+      const data = await getDaySchedule(dateStr)
+      setDaySchedule(data || { dayActive: true, slots: [] })
     } catch (e) {
-      alert.alert('Error', 'No se pudieron cargar las citas.')
+      alert.alert('Error', 'No se pudo cargar el horario del día.')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -43,7 +43,7 @@ export default function AgendaScreen() {
 
   useEffect(() => {
     setLoading(true)
-    loadAppointments(selectedDate)
+    loadDaySchedule(selectedDate)
   }, [selectedDate])
 
   function changeDate(days) {
@@ -63,7 +63,7 @@ export default function AgendaScreen() {
           onPress: async () => {
             try {
               await updateAppointmentStatus(appointment.id, newStatus)
-              loadAppointments(selectedDate)
+              loadDaySchedule(selectedDate)
             } catch {
               alert.alert('Error', 'No se pudo actualizar la cita.')
             }
@@ -71,6 +71,24 @@ export default function AgendaScreen() {
         }
       ]
     )
+  }
+
+  async function handleMarkOccupied(slot) {
+    try {
+      await addBlockedSlot({ datetime: slot.datetime, reason: 'Ocupado', isFullDay: false })
+      loadDaySchedule(selectedDate)
+    } catch {
+      alert.alert('Error', 'No se pudo marcar el horario como ocupado.')
+    }
+  }
+
+  async function handleFreeSlot(slot) {
+    try {
+      await removeBlockedSlot(slot.blockedId)
+      loadDaySchedule(selectedDate)
+    } catch {
+      alert.alert('Error', 'No se pudo liberar el horario.')
+    }
   }
 
   async function handleUrgentAlert() {
@@ -86,7 +104,7 @@ export default function AgendaScreen() {
             try {
               const res = await sendUrgentAlert(reason, format(selectedDate, 'yyyy-MM-dd'))
               alert.alert('✅ Listo', `Se notificaron ${res.notified} clientes.`)
-              loadAppointments(selectedDate)
+              loadDaySchedule(selectedDate)
             } catch {
               alert.alert('Error', 'No se pudo enviar la alerta.')
             }
@@ -97,52 +115,78 @@ export default function AgendaScreen() {
     )
   }
 
-  const activeAppointments = appointments.filter(a => a.status !== 'cancelled')
+  const slots = daySchedule.slots || []
+  const bookedAppointments = slots.filter(s => s.status === 'booked').map(s => s.appointment)
 
-  function renderAppointment({ item }) {
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardLeft}>
-          <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[item.status] }]} />
-          <View>
-            <Text style={styles.clientName}>{item.clientName}</Text>
-            <Text style={styles.service}>{item.service}</Text>
-            <Text style={styles.time}>🕐 {item.time}</Text>
+  function renderSlot({ item }) {
+    if (item.status === 'booked') {
+      const appt = item.appointment
+      return (
+        <View style={styles.card}>
+          <View style={styles.cardLeft}>
+            <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[appt.status] }]} />
+            <View>
+              <Text style={styles.clientName}>{appt.clientName}</Text>
+              <Text style={styles.service}>{appt.service}</Text>
+              <Text style={styles.time}>🕐 {item.time}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardRight}>
+            <Text style={[styles.statusBadge, { color: STATUS_COLORS[appt.status] }]}>
+              {STATUS_LABELS[appt.status]}
+            </Text>
+            {appt.status === 'pending' && (
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.confirmBtn]}
+                  onPress={() => handleStatusChange(appt, 'confirmed')}
+                >
+                  <Ionicons name="checkmark" size={16} color={colors.black} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.cancelBtn]}
+                  onPress={() => handleStatusChange(appt, 'cancelled')}
+                >
+                  <Ionicons name="close" size={16} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {appt.status === 'confirmed' && (
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.cancelBtn]}
+                  onPress={() => handleStatusChange(appt, 'cancelled')}
+                >
+                  <Ionicons name="close" size={16} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
+      )
+    }
 
-        <View style={styles.cardRight}>
-          <Text style={[styles.statusBadge, { color: STATUS_COLORS[item.status] }]}>
-            {STATUS_LABELS[item.status]}
-          </Text>
-          {item.status === 'pending' && (
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.confirmBtn]}
-                onPress={() => handleStatusChange(item, 'confirmed')}
-              >
-                <Ionicons name="checkmark" size={16} color={colors.black} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.cancelBtn]}
-                onPress={() => handleStatusChange(item, 'cancelled')}
-              >
-                <Ionicons name="close" size={16} color={colors.white} />
-              </TouchableOpacity>
-            </View>
-          )}
-          {item.status === 'confirmed' && (
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.cancelBtn]}
-                onPress={() => handleStatusChange(item, 'cancelled')}
-              >
-                <Ionicons name="close" size={16} color={colors.white} />
-              </TouchableOpacity>
-            </View>
-          )}
+    if (item.status === 'blocked') {
+      return (
+        <TouchableOpacity style={styles.blockedRow} onPress={() => handleFreeSlot(item)}>
+          <View style={styles.slotLeft}>
+            <Ionicons name="lock-closed" size={14} color={colors.warning} />
+            <Text style={styles.slotTime}>{item.time}</Text>
+          </View>
+          <Text style={styles.slotHintBlocked}>Ocupado · Toca para liberar</Text>
+        </TouchableOpacity>
+      )
+    }
+
+    return (
+      <TouchableOpacity style={styles.freeRow} onPress={() => handleMarkOccupied(item)}>
+        <View style={styles.slotLeft}>
+          <Ionicons name="ellipse-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.slotTime}>{item.time}</Text>
         </View>
-      </View>
+        <Text style={styles.slotHintFree}>Libre · Toca para marcar ocupado</Text>
+      </TouchableOpacity>
     )
   }
 
@@ -171,52 +215,57 @@ export default function AgendaScreen() {
       {/* Stats del día */}
       <View style={styles.stats}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{activeAppointments.length}</Text>
+          <Text style={styles.statNumber}>{bookedAppointments.length}</Text>
           <Text style={styles.statLabel}>Citas</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>
-            {appointments.filter(a => a.status === 'confirmed').length}
+            {bookedAppointments.filter(a => a.status === 'confirmed').length}
           </Text>
           <Text style={styles.statLabel}>Confirmadas</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>
-            {appointments.filter(a => a.status === 'pending').length}
+            {bookedAppointments.filter(a => a.status === 'pending').length}
           </Text>
           <Text style={styles.statLabel}>Pendientes</Text>
         </View>
       </View>
 
-      {/* Lista de citas */}
+      {/* Horario del día */}
       {loading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.xl }} />
+      ) : !daySchedule.dayActive ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyIcon}>📭</Text>
+          <Text style={styles.emptyText}>No hay horario configurado para este día</Text>
+        </View>
       ) : (
         <FlatList
-          data={appointments}
-          keyExtractor={item => item.id}
-          renderItem={renderAppointment}
+          data={slots}
+          keyExtractor={item => item.datetime}
+          renderItem={renderSlot}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => { setRefreshing(true); loadAppointments(selectedDate) }}
+              onRefresh={() => { setRefreshing(true); loadDaySchedule(selectedDate) }}
               tintColor={colors.accent}
             />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>📭</Text>
-              <Text style={styles.emptyText}>Sin citas para este día</Text>
+              <Text style={styles.emptyText}>Sin horarios para este día</Text>
             </View>
           }
         />
       )}
 
       {/* Botón alerta urgente */}
-      {activeAppointments.length > 0 && (
+      {bookedAppointments.filter(a => a.status !== 'cancelled').length > 0 && (
         <TouchableOpacity style={styles.urgentBtn} onPress={handleUrgentAlert}>
           <Ionicons name="warning" size={18} color={colors.black} />
           <Text style={styles.urgentBtnText}>Alerta urgente</Text>
@@ -266,7 +315,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -286,6 +335,32 @@ const styles = StyleSheet.create({
   },
   confirmBtn: { backgroundColor: colors.accent },
   cancelBtn: { backgroundColor: colors.error },
+  freeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    borderRadius: radius.sm,
+    borderWidth: 1, borderColor: colors.border,
+    backgroundColor: 'transparent',
+  },
+  blockedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    borderRadius: radius.sm,
+    borderWidth: 1, borderColor: colors.warning,
+    backgroundColor: '#FFB30015',
+  },
+  slotLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  slotTime: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  slotHintFree: { fontSize: 11, color: colors.textMuted },
+  slotHintBlocked: { fontSize: 11, color: colors.warning, fontWeight: '600' },
   empty: { alignItems: 'center', paddingTop: spacing.xxl },
   emptyIcon: { fontSize: 40, marginBottom: spacing.md },
   emptyText: { color: colors.textSecondary, fontSize: 15 },

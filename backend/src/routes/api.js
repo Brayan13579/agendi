@@ -3,6 +3,7 @@ const router = express.Router()
 const { getDb } = require('../config/firebase')
 const db = require('../services/database')
 const wa = require('../services/whatsapp')
+const scheduler = require('../services/scheduler')
 
 // Middleware de autenticación simple con API key
 // (En producción reemplazar con Firebase Auth)
@@ -130,6 +131,19 @@ router.delete('/services/:id', async (req, res) => {
 })
 
 // ─── HORARIOS ────────────────────────────────────────────────
+
+// GET /api/day-schedule?date=2024-01-15 — todos los horarios del día (libres, ocupados, citas)
+router.get('/day-schedule', async (req, res) => {
+  try {
+    const { date } = req.query
+    if (!date) return res.status(400).json({ error: 'Falta el parámetro date' })
+
+    const result = await scheduler.getDaySchedule('default', date)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
 
 // GET /api/schedule
 router.get('/schedule', async (req, res) => {

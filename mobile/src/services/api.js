@@ -34,6 +34,11 @@ export const updateAppointmentStatus = async (id, status, reason = null) => {
   return res.data
 }
 
+export const getDaySchedule = async (date) => {
+  const res = await api.get('/api/day-schedule', { params: { date } })
+  return res.data
+}
+
 // ─── SERVICIOS ───────────────────────────────────────────────
 
 export const getServices = async () => {
