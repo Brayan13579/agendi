@@ -63,8 +63,10 @@ async function getAvailableSlots(barberId = 'default', daysAhead = 3, serviceDur
     let currentMin = startMin
 
     // Si es hoy, comenzar desde ahora + 1 hora de margen
+    // El servidor corre en UTC pero las horas del horario están pensadas en hora de Bogotá (UTC-5),
+    // así que se resta ese offset antes de comparar para no marcar el día como "cerrado" de más temprano.
     if (dayOffset === 0) {
-      const minTime = new Date()
+      const minTime = new Date(Date.now() - 5 * 60 * 60 * 1000)
       minTime.setMinutes(minTime.getMinutes() + 60)
       if (minTime.getHours() > startHour ||
           (minTime.getHours() === startHour && minTime.getMinutes() > startMin)) {
@@ -109,6 +111,22 @@ async function getAvailableSlots(barberId = 'default', daysAhead = 3, serviceDur
   }
 
   return availableSlots
+}
+
+// Verificar justo antes de confirmar si un horario sigue libre (bloqueo manual o cita de otro cliente)
+async function isSlotTaken(barberId, datetime) {
+  const db = getDb()
+
+  const blockedSnapshot = await db.collection('blockedSlots')
+    .where('barberId', '==', barberId)
+    .where('datetime', '==', datetime)
+    .get()
+  if (!blockedSnapshot.empty) return true
+
+  const apptSnapshot = await db.collection('appointments')
+    .where('datetime', '==', datetime)
+    .get()
+  return apptSnapshot.docs.some(doc => doc.data().status !== 'cancelled')
 }
 
 // Formatear lista de días disponibles para que el cliente elija uno
@@ -218,4 +236,4 @@ async function getDaySchedule(barberId = 'default', dateStr) {
   return { dayActive: true, slots }
 }
 
-module.exports = { getAvailableSlots, getDaySchedule, formatDaysMessage, formatDaySlotsMessage, formatDate, formatTime }
+module.exports = { getAvailableSlots, getDaySchedule, isSlotTaken, formatDaysMessage, formatDaySlotsMessage, formatDate, formatTime }

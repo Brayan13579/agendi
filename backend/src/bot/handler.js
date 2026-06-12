@@ -1,6 +1,6 @@
 const db = require('../services/database')
 const wa = require('../services/whatsapp')
-const { getAvailableSlots, formatDaysMessage, formatDaySlotsMessage, formatDate } = require('../services/scheduler')
+const { getAvailableSlots, isSlotTaken, formatDaysMessage, formatDaySlotsMessage, formatDate } = require('../services/scheduler')
 
 // Estados posibles de la conversación
 const STATES = {
@@ -234,6 +234,28 @@ async function handleSlotChoice(phone, text, session) {
 
 async function handleConfirmation(phone, text, session) {
   if (text === '1' || text.includes('si') || text.includes('sí') || text.includes('confirmo')) {
+    // Revalidar justo antes de crear la cita, por si alguien ocupó el horario mientras se decidía
+    const taken = await isSlotTaken('default', session.slot.datetime)
+    if (taken) {
+      const availableDays = await getAvailableSlots('default', 14, session.service.duration)
+
+      if (availableDays.length === 0) {
+        await wa.sendText(phone, '😔 Justo se ocupó ese horario y no quedan otros disponibles. Intenta más tarde o escribe *cancelar*.')
+        return db.deleteSession(phone)
+      }
+
+      await db.saveSession(phone, {
+        state: STATES.CHOOSING_DAY,
+        clientName: session.clientName,
+        service: session.service,
+        availableDays
+      })
+
+      await wa.sendText(phone, '😔 Justo acaban de ocupar ese horario. Elige otro:')
+      const { message } = formatDaysMessage(availableDays)
+      return wa.sendText(phone, message)
+    }
+
     const appointmentId = await db.createAppointment({
       clientPhone: phone,
       clientName: session.clientName,
