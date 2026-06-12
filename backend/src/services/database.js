@@ -1,4 +1,5 @@
 const { getDb } = require('../config/firebase')
+const { labelNow } = require('../utils/time')
 
 // ─── CLIENTES ───────────────────────────────────────────────
 
@@ -59,7 +60,7 @@ async function getAppointmentByPhone(phone) {
     .where('clientPhone', '==', phone)
     .get()
 
-  const now = new Date().toISOString()
+  const now = labelNow().toISOString()
   const upcoming = snapshot.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .filter(a => a.status !== 'cancelled' && a.datetime >= now)
@@ -122,7 +123,7 @@ async function getBlockedSlots(barberId = 'default') {
   const db = getDb()
   const snapshot = await db.collection('blockedSlots')
     .where('barberId', '==', barberId)
-    .where('datetime', '>=', new Date().toISOString())
+    .where('datetime', '>=', labelNow().toISOString())
     .get()
 
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))

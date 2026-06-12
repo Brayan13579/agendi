@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator
+  RefreshControl, ActivityIndicator, Linking
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { format, addDays, subDays, isToday } from 'date-fns'
@@ -91,6 +91,10 @@ export default function AgendaScreen() {
     }
   }
 
+  function openWhatsApp(phone) {
+    Linking.openURL(`https://wa.me/${phone}`)
+  }
+
   async function handleUrgentAlert() {
     alert.prompt(
       '🚨 Alerta urgente',
@@ -128,7 +132,7 @@ export default function AgendaScreen() {
             <View>
               <Text style={styles.clientName}>{appt.clientName}</Text>
               <Text style={styles.service}>{appt.service}</Text>
-              <Text style={styles.time}>🕐 {item.time}</Text>
+              <Text style={styles.time}>🕐 {item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
             </View>
           </View>
 
@@ -136,32 +140,32 @@ export default function AgendaScreen() {
             <Text style={[styles.statusBadge, { color: STATUS_COLORS[appt.status] }]}>
               {STATUS_LABELS[appt.status]}
             </Text>
-            {appt.status === 'pending' && (
-              <View style={styles.actions}>
+            <View style={styles.actions}>
+              {appt.clientPhone && (
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.whatsappBtn]}
+                  onPress={() => openWhatsApp(appt.clientPhone)}
+                >
+                  <Ionicons name="logo-whatsapp" size={16} color={colors.black} />
+                </TouchableOpacity>
+              )}
+              {appt.status === 'pending' && (
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.confirmBtn]}
                   onPress={() => handleStatusChange(appt, 'confirmed')}
                 >
                   <Ionicons name="checkmark" size={16} color={colors.black} />
                 </TouchableOpacity>
+              )}
+              {appt.status !== 'cancelled' && (
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.cancelBtn]}
                   onPress={() => handleStatusChange(appt, 'cancelled')}
                 >
                   <Ionicons name="close" size={16} color={colors.white} />
                 </TouchableOpacity>
-              </View>
-            )}
-            {appt.status === 'confirmed' && (
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.cancelBtn]}
-                  onPress={() => handleStatusChange(appt, 'cancelled')}
-                >
-                  <Ionicons name="close" size={16} color={colors.white} />
-                </TouchableOpacity>
-              </View>
-            )}
+              )}
+            </View>
           </View>
         </View>
       )
@@ -172,7 +176,7 @@ export default function AgendaScreen() {
         <TouchableOpacity style={styles.blockedRow} onPress={() => handleFreeSlot(item)}>
           <View style={styles.slotLeft}>
             <Ionicons name="lock-closed" size={14} color={colors.warning} />
-            <Text style={styles.slotTime}>{item.time}</Text>
+            <Text style={styles.slotTime}>{item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
           </View>
           <Text style={styles.slotHintBlocked}>Ocupado · Toca para liberar</Text>
         </TouchableOpacity>
@@ -183,7 +187,7 @@ export default function AgendaScreen() {
       <TouchableOpacity style={styles.freeRow} onPress={() => handleMarkOccupied(item)}>
         <View style={styles.slotLeft}>
           <Ionicons name="ellipse-outline" size={14} color={colors.textMuted} />
-          <Text style={styles.slotTime}>{item.time}</Text>
+          <Text style={styles.slotTime}>{item.time}{item.endTime ? ` - ${item.endTime}` : ''}</Text>
         </View>
         <Text style={styles.slotHintFree}>Libre · Toca para marcar ocupado</Text>
       </TouchableOpacity>
@@ -335,6 +339,7 @@ const styles = StyleSheet.create({
   },
   confirmBtn: { backgroundColor: colors.accent },
   cancelBtn: { backgroundColor: colors.error },
+  whatsappBtn: { backgroundColor: '#25D366' },
   freeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

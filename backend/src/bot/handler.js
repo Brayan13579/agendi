@@ -235,7 +235,7 @@ async function handleSlotChoice(phone, text, session) {
 async function handleConfirmation(phone, text, session) {
   if (text === '1' || text.includes('si') || text.includes('sí') || text.includes('confirmo')) {
     // Revalidar justo antes de crear la cita, por si alguien ocupó el horario mientras se decidía
-    const taken = await isSlotTaken('default', session.slot.datetime)
+    const taken = await isSlotTaken('default', session.slot.datetime, session.service.duration)
     if (taken) {
       const availableDays = await getAvailableSlots('default', 14, session.service.duration)
 
@@ -261,6 +261,7 @@ async function handleConfirmation(phone, text, session) {
       clientName: session.clientName,
       service: session.service.name,
       servicePrice: session.service.price,
+      duration: session.service.duration,
       datetime: session.slot.datetime,
       date: session.slot.dateLabel,
       time: session.slot.label,
