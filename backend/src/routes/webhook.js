@@ -39,16 +39,26 @@ router.post('/webhook', async (req, res) => {
     const message = value.messages[0]
     const phone = message.from
 
-    // Solo procesar mensajes de texto por ahora
-    if (message.type !== 'text') {
-      // Puedes agregar soporte para audio/imagen después
+    // Extraer texto de mensajes de texto e interactivos (botones / listas)
+    let messageText
+    if (message.type === 'text') {
+      messageText = message.text.body
+    } else if (message.type === 'interactive') {
+      const { type } = message.interactive
+      if (type === 'button_reply') {
+        messageText = message.interactive.button_reply.id
+      } else if (type === 'list_reply') {
+        messageText = message.interactive.list_reply.id
+      } else {
+        return
+      }
+    } else {
       return
     }
 
-    const text = message.text.body
-    console.log(`📩 Mensaje de ${phone}: ${text}`)
+    console.log(`📩 Mensaje de ${phone}: ${messageText}`)
 
-    await handleMessage(phone, text)
+    await handleMessage(phone, messageText)
   } catch (error) {
     console.error('❌ Error procesando webhook:', error.message)
   }

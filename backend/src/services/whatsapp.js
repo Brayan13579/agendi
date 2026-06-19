@@ -2,13 +2,11 @@ const axios = require('axios')
 
 const WHATSAPP_API_URL = `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_ID}/messages`
 
-// Cabeceras para todas las peticiones
 const headers = () => ({
   Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
   'Content-Type': 'application/json'
 })
 
-// Enviar mensaje de texto simple
 async function sendText(to, message) {
   try {
     await axios.post(WHATSAPP_API_URL, {
@@ -22,13 +20,61 @@ async function sendText(to, message) {
   }
 }
 
-// Enviar lista de opciones numeradas (más fácil para el cliente)
-async function sendOptions(to, title, options) {
-  const optionsList = options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')
-  await sendText(to, `${title}\n\n${optionsList}\n\n_Responde con el número de tu opción._`)
+// Botones de respuesta rápida — máx 3 botones, título máx 20 chars
+async function sendButtons(to, bodyText, buttons) {
+  try {
+    await axios.post(WHATSAPP_API_URL, {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: { text: bodyText },
+        action: {
+          buttons: buttons.map(b => ({
+            type: 'reply',
+            reply: { id: b.id, title: b.title }
+          }))
+        }
+      }
+    }, { headers: headers() })
+  } catch (error) {
+    console.error('❌ Error enviando botones:', error.response?.data || error.message)
+  }
 }
 
-// Enviar confirmación de cita con todos los datos
+// Lista desplegable — máx 10 filas en total
+// sections: [{ title, rows: [{ id, title, description? }] }]
+async function sendList(to, bodyText, buttonLabel, sections, footer) {
+  try {
+    const interactive = {
+      type: 'list',
+      body: { text: bodyText },
+      action: {
+        button: buttonLabel,
+        sections: sections.map(s => ({
+          title: s.title,
+          rows: s.rows.map(r => ({
+            id: r.id,
+            title: r.title,
+            ...(r.description ? { description: r.description } : {})
+          }))
+        }))
+      }
+    }
+    if (footer) interactive.footer = { text: footer }
+
+    await axios.post(WHATSAPP_API_URL, {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'interactive',
+      interactive
+    }, { headers: headers() })
+  } catch (error) {
+    console.error('❌ Error enviando lista:', error.response?.data || error.message)
+  }
+}
+
 async function sendConfirmation(to, appointment) {
   const message =
     `✅ *Cita confirmada*\n\n` +
@@ -37,11 +83,9 @@ async function sendConfirmation(to, appointment) {
     `📅 ${appointment.date}\n` +
     `🕐 ${appointment.time}\n\n` +
     `Para cancelar escribe *cancelar* en cualquier momento.`
-
   await sendText(to, message)
 }
 
-// Enviar recordatorio antes de la cita
 async function sendReminder(to, appointment) {
   const minutes = process.env.REMINDER_MINUTES || 30
   const message =
@@ -50,23 +94,21 @@ async function sendReminder(to, appointment) {
     `✂️  ${appointment.service}\n` +
     `🕐 ${appointment.time}\n\n` +
     `¡Te esperamos!`
-
   await sendText(to, message)
 }
 
-// Notificar al cliente que el barbero canceló y puede reagendar
 async function sendBarberCancellation(to, clientName, reason) {
   const message =
     `😔 Hola ${clientName}, lamentablemente tu barbero tuvo un inconveniente.\n\n` +
     (reason ? `📝 Motivo: ${reason}\n\n` : '') +
     `Para reagendar escribe *cita* cuando quieras.`
-
   await sendText(to, message)
 }
 
 module.exports = {
   sendText,
-  sendOptions,
+  sendButtons,
+  sendList,
   sendConfirmation,
   sendReminder,
   sendBarberCancellation
