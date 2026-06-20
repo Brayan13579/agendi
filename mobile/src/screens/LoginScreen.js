@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }) {
   const logoSize = Math.min(width * (isWide ? 0.28 : 0.52), 220)
 
   const [serverUrl, setServerUrl] = useState('')
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState('admin')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(null)
@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
   },
   inner: {
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
   },
   innerWide: {
     maxWidth: 400,

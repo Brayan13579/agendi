@@ -16,8 +16,8 @@ router.post('/auth/login', async (req, res) => {
     if (authConfig) {
       valid = username === authConfig.username && password === authConfig.password
     } else {
-      // Sin config en Firebase: credenciales por defecto (admin + BARBER_API_KEY)
-      valid = username === 'admin' && password === process.env.BARBER_API_KEY
+      // Sin config en Firebase: credenciales por defecto
+      valid = username === 'admin' && password === 'admin'
     }
 
     if (!valid) {
@@ -49,7 +49,7 @@ router.post('/auth/change-password', async (req, res) => {
 
     const authConfig = await db.getAuthConfig()
     const currentUsername = authConfig?.username || 'admin'
-    const expectedPassword = authConfig ? authConfig.password : process.env.BARBER_API_KEY
+    const expectedPassword = authConfig ? authConfig.password : 'admin'
 
     if (currentPassword !== expectedPassword) {
       return res.status(401).json({ error: 'Contraseña actual incorrecta' })
