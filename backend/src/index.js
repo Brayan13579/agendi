@@ -4,6 +4,7 @@ const cors = require('cors')
 const { initFirebase } = require('./config/firebase')
 const webhookRoutes = require('./routes/webhook')
 const apiRoutes = require('./routes/api')
+const authRoutes = require('./routes/auth')
 const { startReminderCron } = require('./cron/reminders')
 
 const app = express()
@@ -14,6 +15,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 app.use('/', webhookRoutes)
+app.use('/', authRoutes)
 app.use('/api', apiRoutes)
 
 app.get('/health', (req, res) => {

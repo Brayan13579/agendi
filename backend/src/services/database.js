@@ -155,6 +155,23 @@ async function getBotConfig(barberId = 'default') {
   }
 }
 
+// ─── AUTENTICACIÓN ───────────────────────────────────────────
+
+async function getAuthConfig() {
+  const db = getDb()
+  const doc = await db.collection('settings').doc('auth').get()
+  return doc.exists ? doc.data() : null
+}
+
+async function setAuthPassword(username, password) {
+  const db = getDb()
+  await db.collection('settings').doc('auth').set({
+    username,
+    password,
+    updatedAt: new Date().toISOString()
+  })
+}
+
 module.exports = {
   getClient,
   saveClient,
@@ -170,5 +187,7 @@ module.exports = {
   getServices,
   getScheduleConfig,
   getBlockedSlots,
-  getBotConfig
+  getBotConfig,
+  getAuthConfig,
+  setAuthPassword
 }

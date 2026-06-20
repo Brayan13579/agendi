@@ -104,4 +104,11 @@ export const updateBotConfig = async (data) => {
   return res.data
 }
 
+// ─── AUTENTICACIÓN ───────────────────────────────────────────
+
+export const changePassword = async (currentPassword, newPassword) => {
+  const res = await api.post('/auth/change-password', { currentPassword, newPassword })
+  return res.data
+}
+
 export default api
