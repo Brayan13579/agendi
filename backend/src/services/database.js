@@ -47,8 +47,8 @@ async function deleteSession(phone) {
 async function createAppointment(data) {
   const db = getDb()
   const ref = await db.collection('appointments').add({
+    status: 'confirmed',
     ...data,
-    status: 'pending', // pending | confirmed | cancelled
     createdAt: new Date().toISOString()
   })
   return ref.id
