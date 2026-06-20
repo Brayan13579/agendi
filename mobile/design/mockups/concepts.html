@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Agendi — Conceptos Agenda</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0d0f;
+    font-family: 'Manrope', sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    padding: 40px;
+    align-items: flex-start;
+  }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .label {
+    color: #999; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px;
+    font-family: 'Manrope', sans-serif;
+  }
+  .phone {
+    width: 360px;
+    height: 680px;
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+
+  /* ============ NOISE OVERLAY (shared) ============ */
+  .noise {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ====================================================== */
+  /* CONCEPT A — Liquid Glow Dorado                          */
+  /* ====================================================== */
+  .concept-a {
+    background: radial-gradient(ellipse 120% 60% at 50% -10%, #2a1f12 0%, #15110d 45%, #0a0807 100%);
+  }
+  .a-blob {
+    position: absolute;
+    width: 480px; height: 480px;
+    top: -180px; right: -160px;
+    background: radial-gradient(circle, rgba(212,162,78,0.35) 0%, rgba(212,162,78,0) 70%);
+    filter: blur(10px);
+    border-radius: 50%;
+  }
+  .a-header {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 24px 0;
+  }
+  .a-logo { display: flex; align-items: center; gap: 10px; }
+  .a-logo-mark {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1.5px solid #D4A24E;
+    display: flex; align-items: center; justify-content: center;
+    color: #D4A24E; font-size: 14px;
+  }
+  .a-logo-text {
+    font-family: 'Bebas Neue', sans-serif; color: #F7F1E4;
+    font-size: 20px; letter-spacing: 3px;
+  }
+  .a-bell {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    color: #AD9D89; font-size: 15px; position: relative;
+  }
+  .a-bell::after {
+    content: ''; position: absolute; top: 8px; right: 8px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #C0594C; box-shadow: 0 0 8px #C0594C;
+  }
+
+  .a-greeting { position: relative; z-index: 2; padding: 22px 24px 0; }
+  .a-greeting .script {
+    font-family: 'Caveat', cursive; font-size: 30px; font-weight: 700;
+    color: #E8C77E; display: block; line-height: 1;
+  }
+  .a-greeting h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 46px;
+    color: #F7F1E4; letter-spacing: 1px; margin-top: 2px;
+  }
+  .a-greeting p {
+    color: #AD9D89; font-size: 13.5px; margin-top: 4px; max-width: 200px;
+  }
+
+  /* Photo blob with liquid shape + glow ring */
+  .a-photo-zone {
+    position: relative; z-index: 2;
+    margin: 26px 24px 0;
+    height: 230px;
+  }
+  .a-photo-glow {
+    position: absolute;
+    width: 230px; height: 230px;
+    right: 8px; top: -6px;
+    background: radial-gradient(circle, rgba(212,162,78,0.55) 0%, rgba(212,162,78,0) 72%);
+    filter: blur(6px);
+  }
+  .a-photo {
+    position: absolute;
+    width: 210px; height: 230px;
+    right: 18px; top: 0;
+    background-image:
+      linear-gradient(165deg, rgba(212,162,78,0.25) 0%, rgba(11,8,5,0.55) 100%),
+      url('https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=500&q=80');
+    background-size: cover;
+    background-position: center 25%;
+    border-radius: 58% 42% 38% 62% / 62% 48% 52% 38%;
+    border: 2px solid rgba(212,162,78,0.4);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .a-card {
+    position: absolute;
+    left: 0; top: 86px;
+    width: 195px;
+    background: rgba(28,22,15,0.72);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(212,162,78,0.25);
+    border-radius: 22px;
+    padding: 16px;
+  }
+  .a-card .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #E8C77E; margin-bottom: 8px;
+  }
+  .a-card .tag::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: #E8C77E; box-shadow: 0 0 6px #E8C77E;
+  }
+  .a-card .name { font-size: 19px; font-weight: 800; color: #F7F1E4; }
+  .a-card .svc { font-size: 12.5px; color: #AD9D89; margin-top: 1px; }
+  .a-card .time {
+    margin-top: 12px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; color: #D4A24E; letter-spacing: 1px;
+  }
+  .a-card .pill {
+    margin-top: 10px; display: inline-block;
+    background: rgba(124,156,196,0.16); color: #9DBBE0;
+    font-size: 11px; font-weight: 700; padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  /* Stats row */
+  .a-stats {
+    position: relative; z-index: 2;
+    display: flex; gap: 10px;
+    margin: 24px 24px 0;
+  }
+  .a-stat {
+    flex: 1; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 14px 12px;
+  }
+  .a-stat .icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; margin-bottom: 10px;
+  }
+  .a-stat:nth-child(1) .icon { background: rgba(192,89,76,0.18); color: #E0958A; }
+  .a-stat:nth-child(2) .icon { background: rgba(212,162,78,0.18); color: #E8C77E; }
+  .a-stat:nth-child(3) .icon { background: rgba(127,168,118,0.18); color: #A8CB9F; }
+  .a-stat .val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: #F7F1E4; }
+  .a-stat .lbl { font-size: 10.5px; color: #8A7C68; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* ====================================================== */
+  /* CONCEPT B — Spotlight Carmesí                           */
+  /* ====================================================== */
+  .concept-b { background: #0c0a0a; }
+  .b-photo {
+    position: relative;
+    height: 340px;
+    background-image:
+      linear-gradient(180deg, rgba(12,10,10,0.05) 0%, rgba(12,10,10,0.35) 55%, #0c0a0a 100%),
+      linear-gradient(100deg, rgba(192,76,76,0.25) 0%, rgba(12,10,10,0) 55%),
+      url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80');
+    background-size: cover;
+    background-position: center 30%;
+  }
+  .b-spot {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle 280px at 88% 8%, rgba(214,69,60,0.55) 0%, rgba(214,69,60,0) 70%);
+    mix-blend-mode: screen;
+  }
+  .b-header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 24px 0;
+  }
+  .b-logo {
+    font-family: 'Bebas Neue', sans-serif; color: #F2E8E0;
+    font-size: 20px; letter-spacing: 3px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .b-logo-mark {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1.5px solid #D6453C;
+    display: flex; align-items: center; justify-content: center;
+    color: #D6453C; font-size: 14px;
+    background: rgba(12,10,10,0.4);
+  }
+  .b-bell {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(12,10,10,0.4);
+    border: 1px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    color: #F2E8E0; font-size: 15px;
+  }
+  .b-greeting {
+    position: absolute; bottom: 56px; left: 24px; z-index: 3;
+  }
+  .b-greeting .script {
+    font-family: 'Caveat', cursive; font-size: 32px; font-weight: 700;
+    color: #E89B95; display: block; line-height: 1;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  }
+  .b-greeting h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 48px;
+    color: #FBF6F0; letter-spacing: 1px;
+    text-shadow: 0 4px 16px rgba(0,0,0,0.7);
+  }
+  .b-badge {
+    position: absolute; top: 78px; right: 24px; z-index: 3;
+    background: rgba(12,10,10,0.45);
+    border: 1px solid rgba(214,69,60,0.5);
+    backdrop-filter: blur(10px);
+    color: #F2A39C; font-size: 11.5px; font-weight: 700;
+    letter-spacing: 1px; padding: 7px 14px; border-radius: 999px;
+    box-shadow: 0 0 22px rgba(214,69,60,0.35);
+  }
+
+  /* Liquid card overlapping the photo */
+  .b-card-wrap { position: relative; z-index: 4; margin: -54px 18px 0; }
+  .b-card {
+    background: linear-gradient(165deg, #1c1414 0%, #120e0e 100%);
+    border: 1px solid rgba(214,69,60,0.28);
+    border-radius: 32px 16px 32px 16px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 24px 50px rgba(0,0,0,0.55), 0 0 40px rgba(214,69,60,0.12);
+    padding: 20px;
+  }
+  .b-card-top { display: flex; justify-content: space-between; align-items: center; }
+  .b-card-top .tag {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #E0958A;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .b-card-top .tag::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: #D6453C; box-shadow: 0 0 8px #D6453C;
+  }
+  .b-card-top .time-chip {
+    background: rgba(214,69,60,0.14); color: #F2A39C;
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+  }
+  .b-card-body { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+  .b-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background:
+      linear-gradient(165deg, rgba(214,69,60,0.3), rgba(0,0,0,0.4)),
+      url('https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=200&q=80');
+    background-size: cover; background-position: center;
+    border: 2px solid rgba(214,69,60,0.4);
+    flex-shrink: 0;
+  }
+  .b-card-body .name { font-size: 19px; font-weight: 800; color: #F7EFEA; }
+  .b-card-body .svc { font-size: 12.5px; color: #B89E98; margin-top: 1px; }
+  .b-card-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .b-btn {
+    flex: 1; text-align: center; padding: 10px;
+    border-radius: 14px; font-size: 12.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .b-btn.primary { background: #D6453C; color: #fff; box-shadow: 0 8px 24px rgba(214,69,60,0.35); }
+  .b-btn.ghost { background: rgba(255,255,255,0.05); color: #D9C9C5; border: 1px solid rgba(255,255,255,0.08); }
+
+  /* Stats row */
+  .b-stats { display: flex; gap: 10px; margin: 18px 18px 0; }
+  .b-stat {
+    flex: 1; background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px; padding: 14px 12px;
+  }
+  .b-stat .icon {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; margin-bottom: 10px;
+  }
+  .b-stat:nth-child(1) .icon { background: rgba(214,69,60,0.18); color: #F2A39C; }
+  .b-stat:nth-child(2) .icon { background: rgba(212,162,78,0.18); color: #E8C77E; }
+  .b-stat:nth-child(3) .icon { background: rgba(255,255,255,0.07); color: #F2E8E0; }
+  .b-stat .val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: #F7EFEA; }
+  .b-stat .lbl { font-size: 10.5px; color: #9C8A85; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* ====================================================== */
+  /* CONCEPT C — Dual-tone Poste de Barbero                  */
+  /* ====================================================== */
+  .concept-c { background: #0a0a0c; }
+  .c-blob-red {
+    position: absolute; width: 380px; height: 380px;
+    top: -140px; left: -120px;
+    background: radial-gradient(circle, rgba(181,69,60,0.45) 0%, rgba(181,69,60,0) 70%);
+    filter: blur(20px);
+  }
+  .c-blob-blue {
+    position: absolute; width: 360px; height: 360px;
+    top: 120px; right: -150px;
+    background: radial-gradient(circle, rgba(79,110,148,0.4) 0%, rgba(79,110,148,0) 70%);
+    filter: blur(20px);
+  }
+  .c-header {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 24px 0;
+  }
+  .c-logo {
+    font-family: 'Bebas Neue', sans-serif; color: #F2EFE9;
+    font-size: 20px; letter-spacing: 3px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .c-logo-mark {
+    width: 34px; height: 34px; border-radius: 50%;
+    position: relative;
+    background: conic-gradient(from 0deg, #B5453C 0deg, #F2E8D8 90deg, #4F6E94 180deg, #F2E8D8 270deg, #B5453C 360deg);
+    animation: spin 8s linear infinite;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .c-logo-mark::after {
+    content: ''; position: absolute; inset: 3px;
+    background: #0a0a0c; border-radius: 50%;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .c-menu {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    color: #C7BFB4; font-size: 15px;
+  }
+
+  .c-greeting { position: relative; z-index: 2; padding: 24px 24px 0; }
+  .c-greeting .script {
+    font-family: 'Caveat', cursive; font-size: 30px; font-weight: 700;
+    background: linear-gradient(90deg, #E8978F, #E8C77E);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    display: block; line-height: 1;
+  }
+  .c-greeting h1 { font-family: 'Bebas Neue', sans-serif; font-size: 46px; color: #F7F1E4; letter-spacing: 1px; }
+
+  /* Circular duotone photo + spinning ring */
+  .c-photo-row { position: relative; z-index: 2; display: flex; align-items: center; gap: 16px; margin: 22px 24px 0; }
+  .c-ring {
+    width: 104px; height: 104px; border-radius: 50%;
+    background: conic-gradient(from 90deg, #B5453C, #F2E8D8, #4F6E94, #D4A24E, #B5453C);
+    animation: spin 10s linear infinite;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 30px rgba(212,162,78,0.25);
+  }
+  .c-photo {
+    width: 92px; height: 92px; border-radius: 50%;
+    background:
+      linear-gradient(165deg, rgba(181,69,60,0.5), rgba(79,110,148,0.5)),
+      url('https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80');
+    background-size: cover; background-position: center 20%;
+    background-blend-mode: color, normal;
+    border: 3px solid #0a0a0c;
+  }
+  .c-photo-row .info { flex: 1; }
+  .c-photo-row .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: #E8C77E; margin-bottom: 6px;
+  }
+  .c-photo-row .badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: #E8C77E; box-shadow: 0 0 6px #E8C77E;
+  }
+  .c-photo-row h2 { font-size: 21px; font-weight: 800; color: #F7F1E4; }
+  .c-photo-row p { font-size: 12.5px; color: #ADA194; margin-top: 1px; }
+
+  /* Liquid gradient-border card */
+  .c-card-outer {
+    position: relative; z-index: 2;
+    margin: 22px 24px 0;
+    border-radius: 28px;
+    padding: 1.5px;
+    background: linear-gradient(135deg, rgba(181,69,60,0.6), rgba(212,162,78,0.5), rgba(79,110,148,0.6));
+  }
+  .c-card {
+    background: #14110f;
+    border-radius: 27px;
+    padding: 18px;
+  }
+  .c-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .c-card .time { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: #F7F1E4; letter-spacing: 1px; }
+  .c-card .pending {
+    background: rgba(124,156,196,0.16); color: #9DBBE0;
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+  }
+  .c-card-actions { display: flex; gap: 10px; }
+  .c-icon-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .c-icon-btn.wa { background: rgba(127,168,118,0.16); color: #A8CB9F; }
+  .c-icon-btn.ok { background: rgba(127,168,118,0.16); color: #A8CB9F; }
+  .c-icon-btn.no { background: rgba(181,69,60,0.16); color: #E0958A; }
+  .c-card-actions span:last-child { margin-left: auto; align-self: center; color: #8A7C68; font-size: 12px; }
+
+  /* Stats */
+  .c-stats { position: relative; z-index: 2; display: flex; gap: 10px; margin: 24px 24px 0; }
+  .c-stat {
+    flex: 1; border-radius: 18px; padding: 14px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .c-stat .val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: #F7F1E4; }
+  .c-stat .lbl { font-size: 10.5px; color: #8A7C68; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .c-stat .bar { height: 4px; border-radius: 2px; margin-top: 10px; background: rgba(255,255,255,0.06); overflow: hidden; }
+  .c-stat .bar i { display: block; height: 100%; border-radius: 2px; }
+  .c-stat:nth-child(1) .bar i { width: 18%; background: linear-gradient(90deg, #B5453C, #E0958A); }
+  .c-stat:nth-child(2) .bar i { width: 60%; background: linear-gradient(90deg, #D4A24E, #E8C77E); }
+  .c-stat:nth-child(3) .bar i { width: 40%; background: linear-gradient(90deg, #4F6E94, #9DBBE0); }
+
+</style>
+</head>
+<body>
+
+  <div class="col">
+    <div class="label">A — Liquid Glow Dorado</div>
+    <div class="phone concept-a">
+      <div class="a-blob"></div>
+      <div class="a-header">
+        <div class="a-logo">
+          <div class="a-logo-mark">✂</div>
+          <div class="a-logo-text">AGENDA</div>
+        </div>
+        <div class="a-bell">🔔</div>
+      </div>
+      <div class="a-greeting">
+        <span class="script">Buenas tardes</span>
+        <h1>Johan</h1>
+        <p>Tienes 1 cita pendiente y la jornada va al 12%</p>
+      </div>
+      <div class="a-photo-zone">
+        <div class="a-photo-glow"></div>
+        <div class="a-photo"></div>
+        <div class="a-card">
+          <div class="tag">Próxima cita</div>
+          <div class="name">Brayan</div>
+          <div class="svc">Corte + Barba</div>
+          <div class="time">4:30 PM</div>
+          <div class="pill">Pendiente</div>
+        </div>
+      </div>
+      <div class="a-stats">
+        <div class="a-stat"><div class="icon">📅</div><div class="val">1</div><div class="lbl">Citas hoy</div></div>
+        <div class="a-stat"><div class="icon">$</div><div class="val">$20K</div><div class="lbl">Ingresos</div></div>
+        <div class="a-stat"><div class="icon">◷</div><div class="val">12%</div><div class="lbl">Ocupación</div></div>
+      </div>
+      <div class="noise"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label">B — Spotlight Carmesí</div>
+    <div class="phone concept-b">
+      <div class="b-photo">
+        <div class="b-spot"></div>
+        <div class="b-header">
+          <div class="b-logo"><div class="b-logo-mark">✂</div> AGENDA</div>
+          <div class="b-bell">🔔</div>
+        </div>
+        <div class="b-badge">● EN 1H</div>
+        <div class="b-greeting">
+          <span class="script">Buenas tardes</span>
+          <h1>Johan</h1>
+        </div>
+      </div>
+      <div class="b-card-wrap">
+        <div class="b-card">
+          <div class="b-card-top">
+            <div class="tag">Próxima cita</div>
+            <div class="time-chip">4:30 – 5:15 PM</div>
+          </div>
+          <div class="b-card-body">
+            <div class="b-avatar"></div>
+            <div>
+              <div class="name">Brayan</div>
+              <div class="svc">Corte + Barba</div>
+            </div>
+          </div>
+          <div class="b-card-actions">
+            <div class="b-btn primary">Confirmar</div>
+            <div class="b-btn ghost">WhatsApp</div>
+          </div>
+        </div>
+      </div>
+      <div class="b-stats">
+        <div class="b-stat"><div class="icon">📅</div><div class="val">1</div><div class="lbl">Citas hoy</div></div>
+        <div class="b-stat"><div class="icon">$</div><div class="val">$20K</div><div class="lbl">Ingresos</div></div>
+        <div class="b-stat"><div class="icon">◷</div><div class="val">12%</div><div class="lbl">Ocupación</div></div>
+      </div>
+      <div class="noise"></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label">C — Dual-tone Poste de Barbero</div>
+    <div class="phone concept-c">
+      <div class="c-blob-red"></div>
+      <div class="c-blob-blue"></div>
+      <div class="c-header">
+        <div class="c-logo"><div class="c-logo-mark"></div> AGENDA</div>
+        <div class="c-menu">☰</div>
+      </div>
+      <div class="c-greeting">
+        <span class="script">Buenas tardes</span>
+        <h1>Johan</h1>
+      </div>
+      <div class="c-photo-row">
+        <div class="c-ring"><div class="c-photo"></div></div>
+        <div class="info">
+          <div class="badge">Próxima cita</div>
+          <h2>Brayan</h2>
+          <p>Corte + Barba · en 1h</p>
+        </div>
+      </div>
+      <div class="c-card-outer">
+        <div class="c-card">
+          <div class="c-card-top">
+            <div class="time">4:30 – 5:15 PM</div>
+            <div class="pending">Pendiente</div>
+          </div>
+          <div class="c-card-actions">
+            <div class="c-icon-btn wa">💬</div>
+            <div class="c-icon-btn ok">✓</div>
+            <div class="c-icon-btn no">✕</div>
+            <span>Brayan · Corte + Barba</span>
+          </div>
+        </div>
+      </div>
+      <div class="c-stats">
+        <div class="c-stat"><div class="val">1</div><div class="lbl">Citas hoy</div><div class="bar"><i></i></div></div>
+        <div class="c-stat"><div class="val">$20K</div><div class="lbl">Ingresos</div><div class="bar"><i></i></div></div>
+        <div class="c-stat"><div class="val">12%</div><div class="lbl">Ocupación</div><div class="bar"><i></i></div></div>
+      </div>
+      <div class="noise"></div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -5,7 +5,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { getServices, createService, updateService, deleteService } from '../services/api'
-import { colors, spacing, radius } from '../services/theme'
+import { colors, spacing, radius, fonts } from '../services/theme'
+import { FadeInUp, PressScale } from '../components/Motion'
 import alert from '../services/alert'
 
 const EMPTY_SERVICE = { name: '', price: '', duration: '30', active: true }
@@ -17,6 +18,7 @@ export default function ServicesScreen() {
   const [editing, setEditing] = useState(null) // null = nuevo
   const [form, setForm] = useState(EMPTY_SERVICE)
   const [saving, setSaving] = useState(false)
+  const [focusedField, setFocusedField] = useState(null)
 
   useEffect(() => { loadServices() }, [])
 
@@ -97,26 +99,32 @@ export default function ServicesScreen() {
     )
   }
 
-  function renderService({ item }) {
+  function renderService({ item, index }) {
     return (
-      <View style={styles.card}>
-        <View style={styles.cardInfo}>
-          <Text style={styles.serviceName}>{item.name}</Text>
-          <View style={styles.serviceMeta}>
-            <Text style={styles.servicePrice}>${item.price.toLocaleString()}</Text>
-            <Text style={styles.serviceDot}>·</Text>
-            <Text style={styles.serviceDuration}>{item.duration} min</Text>
+      <FadeInUp delay={Math.min(index * 50, 350)} distance={14}>
+        <View style={styles.card}>
+          <View style={styles.cardIcon}>
+            <Ionicons name="cut-outline" size={20} color={colors.accent} />
+          </View>
+          <View style={styles.cardInfo}>
+            <Text style={styles.serviceName}>{item.name}</Text>
+            <View style={styles.serviceMeta}>
+              <Text style={styles.servicePrice}>${item.price.toLocaleString()}</Text>
+              <Text style={styles.serviceDot}>·</Text>
+              <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+              <Text style={styles.serviceDuration}>{item.duration} min</Text>
+            </View>
+          </View>
+          <View style={styles.cardActions}>
+            <PressScale onPress={() => openEdit(item)} style={styles.iconBtn}>
+              <Ionicons name="pencil" size={16} color={colors.textSecondary} />
+            </PressScale>
+            <PressScale onPress={() => handleDelete(item)} style={styles.iconBtn}>
+              <Ionicons name="trash-outline" size={16} color={colors.error} />
+            </PressScale>
           </View>
         </View>
-        <View style={styles.cardActions}>
-          <TouchableOpacity onPress={() => openEdit(item)} style={styles.iconBtn}>
-            <Ionicons name="pencil" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDelete(item)} style={styles.iconBtn}>
-            <Ionicons name="trash-outline" size={18} color={colors.error} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      </FadeInUp>
     )
   }
 
@@ -132,7 +140,7 @@ export default function ServicesScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>✂️</Text>
+              <Ionicons name="cut-outline" size={36} color={colors.textMuted} />
               <Text style={styles.emptyText}>No hay servicios aún</Text>
               <Text style={styles.emptyHint}>Toca el botón + para agregar</Text>
             </View>
@@ -141,16 +149,16 @@ export default function ServicesScreen() {
       )}
 
       {/* Botón agregar */}
-      <TouchableOpacity style={styles.fab} onPress={openNew}>
+      <PressScale style={styles.fab} onPress={openNew}>
         <Ionicons name="add" size={28} color={colors.black} />
-      </TouchableOpacity>
+      </PressScale>
 
       {/* Modal crear/editar */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {editing ? 'Editar servicio' : 'Nuevo servicio'}
+              {editing ? 'EDITAR SERVICIO' : 'NUEVO SERVICIO'}
             </Text>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Ionicons name="close" size={24} color={colors.textPrimary} />
@@ -160,27 +168,31 @@ export default function ServicesScreen() {
           <View style={styles.modalBody}>
             <Text style={styles.label}>Nombre del servicio</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, focusedField === 'name' && styles.inputFocused]}
               placeholder="Ej: Corte clásico"
               placeholderTextColor={colors.textMuted}
               value={form.name}
               onChangeText={v => setForm(p => ({ ...p, name: v }))}
+              onFocus={() => setFocusedField('name')}
+              onBlur={() => setFocusedField(null)}
             />
 
             <Text style={styles.label}>Precio</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, focusedField === 'price' && styles.inputFocused]}
               placeholder="Ej: 15000"
               placeholderTextColor={colors.textMuted}
               value={form.price}
               onChangeText={v => setForm(p => ({ ...p, price: v }))}
+              onFocus={() => setFocusedField('price')}
+              onBlur={() => setFocusedField(null)}
               keyboardType="numeric"
             />
 
             <Text style={styles.label}>Duración (minutos)</Text>
             <View style={styles.durationRow}>
               {['15', '30', '45', '60', '90'].map(d => (
-                <TouchableOpacity
+                <PressScale
                   key={d}
                   style={[styles.durationBtn, form.duration === d && styles.durationBtnActive]}
                   onPress={() => setForm(p => ({ ...p, duration: d }))}
@@ -188,11 +200,11 @@ export default function ServicesScreen() {
                   <Text style={[styles.durationText, form.duration === d && styles.durationTextActive]}>
                     {d}
                   </Text>
-                </TouchableOpacity>
+                </PressScale>
               ))}
             </View>
 
-            <TouchableOpacity
+            <PressScale
               style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
               onPress={handleSave}
               disabled={saving}
@@ -200,10 +212,10 @@ export default function ServicesScreen() {
               {saving
                 ? <ActivityIndicator color={colors.black} />
                 : <Text style={styles.saveBtnText}>
-                    {editing ? 'Guardar cambios' : 'Agregar servicio'}
+                    {editing ? 'GUARDAR CAMBIOS' : 'AGREGAR SERVICIO'}
                   </Text>
               }
-            </TouchableOpacity>
+            </PressScale>
           </View>
         </View>
       </Modal>
@@ -213,58 +225,63 @@ export default function ServicesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  list: { padding: spacing.md, paddingBottom: 100 },
+  list: { padding: spacing.md, paddingBottom: 120 },
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     borderWidth: 1, borderColor: colors.border,
   },
+  cardIcon: {
+    width: 40, height: 40, borderRadius: radius.md,
+    backgroundColor: colors.accentDim,
+    alignItems: 'center', justifyContent: 'center',
+  },
   cardInfo: { flex: 1 },
-  serviceName: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  serviceName: { fontFamily: fonts.bold, fontSize: 16, color: colors.textPrimary },
   serviceMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: spacing.xs },
-  servicePrice: { fontSize: 14, fontWeight: '700', color: colors.accent },
+  servicePrice: { fontFamily: fonts.bold, fontSize: 14, color: colors.accent },
   serviceDot: { color: colors.textMuted },
-  serviceDuration: { fontSize: 13, color: colors.textSecondary },
+  serviceDuration: { fontFamily: fonts.medium, fontSize: 13, color: colors.textSecondary },
   cardActions: { flexDirection: 'row', gap: spacing.sm },
   iconBtn: {
-    width: 36, height: 36, borderRadius: radius.full,
+    width: 34, height: 34, borderRadius: radius.full,
     backgroundColor: colors.bgInput,
     alignItems: 'center', justifyContent: 'center',
   },
-  empty: { alignItems: 'center', paddingTop: spacing.xxl },
-  emptyIcon: { fontSize: 40, marginBottom: spacing.md },
-  emptyText: { color: colors.textSecondary, fontSize: 16, fontWeight: '600' },
-  emptyHint: { color: colors.textMuted, fontSize: 13, marginTop: spacing.xs },
+  empty: { alignItems: 'center', paddingTop: spacing.xxl, gap: spacing.xs },
+  emptyText: { fontFamily: fonts.bold, color: colors.textSecondary, fontSize: 16, marginTop: spacing.sm },
+  emptyHint: { fontFamily: fonts.body, color: colors.textMuted, fontSize: 13 },
   fab: {
-    position: 'absolute', bottom: spacing.lg, right: spacing.lg,
-    width: 56, height: 56, borderRadius: 28,
+    position: 'absolute', bottom: 100, right: spacing.lg,
+    width: 58, height: 58, borderRadius: 29,
     backgroundColor: colors.accent,
     alignItems: 'center', justifyContent: 'center',
     shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5, shadowRadius: 16, elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4, shadowRadius: 14, elevation: 8,
   },
   modal: { flex: 1, backgroundColor: colors.bg },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  modalTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.accent, letterSpacing: 2 },
   modalBody: { padding: spacing.lg, gap: spacing.sm },
-  label: { fontSize: 13, color: colors.textSecondary, marginBottom: 4 },
+  label: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
     backgroundColor: colors.bgCard,
     borderWidth: 1, borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: 14,
-    color: colors.textPrimary, fontSize: 15,
+    color: colors.textPrimary, fontFamily: fonts.medium, fontSize: 15,
     marginBottom: spacing.sm,
   },
+  inputFocused: { borderColor: colors.accent, backgroundColor: colors.bgInputFocus },
   durationRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   durationBtn: {
     flex: 1, paddingVertical: 12,
@@ -274,7 +291,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   durationBtnActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
-  durationText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
+  durationText: { fontFamily: fonts.semiBold, color: colors.textSecondary, fontSize: 13 },
   durationTextActive: { color: colors.accent },
   saveBtn: {
     backgroundColor: colors.accent,
@@ -282,5 +299,5 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: spacing.md,
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: colors.black, fontSize: 16, fontWeight: '700' },
+  saveBtnText: { color: colors.black, fontFamily: fonts.bold, fontSize: 14, letterSpacing: 1.5 },
 })

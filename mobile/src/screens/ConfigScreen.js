@@ -6,7 +6,11 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBotConfig, updateBotConfig } from '../services/api'
-import { colors, spacing, radius } from '../services/theme'
+import { colors, spacing, radius, fonts } from '../services/theme'
+import { Image } from 'react-native'
+import { FadeInUp, PressScale } from '../components/Motion'
+
+const logoGold = require('../assets/images/logo-gold.png')
 import alert from '../services/alert'
 
 export default function ConfigScreen({ navigation }) {
@@ -88,7 +92,7 @@ export default function ConfigScreen({ navigation }) {
 
   if (!config) return (
     <View style={styles.centered}>
-      <Text style={{ color: colors.textSecondary, marginBottom: spacing.lg }}>
+      <Text style={{ fontFamily: fonts.medium, color: colors.textSecondary, marginBottom: spacing.lg }}>
         No se pudo cargar la configuración
       </Text>
       <TouchableOpacity
@@ -109,114 +113,127 @@ export default function ConfigScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll}>
 
         {/* Bot activo/pausado */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Estado del bot</Text>
-          <View style={styles.card}>
-            <View style={styles.cardRow}>
-              <View>
-                <Text style={styles.cardLabel}>Bot activo</Text>
-                <Text style={styles.cardHint}>
-                  {config.botActive
-                    ? 'El bot responde automáticamente'
-                    : 'Modo manual — respondes tú'
-                  }
-                </Text>
+        <FadeInUp distance={12}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Estado del bot</Text>
+            <View style={styles.card}>
+              <View style={styles.cardRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardLabel}>Bot activo</Text>
+                  <Text style={styles.cardHint}>
+                    {config.botActive
+                      ? 'El bot responde automáticamente'
+                      : 'Modo manual — respondes tú'
+                    }
+                  </Text>
+                </View>
+                <Switch
+                  value={config.botActive}
+                  onValueChange={v => update('botActive', v)}
+                  trackColor={{ false: colors.border, true: colors.accentDim }}
+                  thumbColor={config.botActive ? colors.accent : colors.textMuted}
+                />
               </View>
-              <Switch
-                value={config.botActive}
-                onValueChange={v => update('botActive', v)}
-                trackColor={{ false: colors.border, true: colors.accentDim }}
-                thumbColor={config.botActive ? colors.accent : colors.textMuted}
-              />
             </View>
           </View>
-        </View>
+        </FadeInUp>
 
         {/* Palabras clave */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Palabras que activan el bot</Text>
-          <View style={styles.card}>
-            <View style={styles.keywordsList}>
-              {config.keywords.map(kw => (
-                <View key={kw} style={styles.keyword}>
-                  <Text style={styles.keywordText}>{kw}</Text>
-                  <TouchableOpacity onPress={() => removeKeyword(kw)}>
-                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-            <View style={styles.addKeywordRow}>
-              <TextInput
-                style={styles.keywordInput}
-                placeholder="Nueva palabra..."
-                placeholderTextColor={colors.textMuted}
-                value={newKeyword}
-                onChangeText={setNewKeyword}
-                onSubmitEditing={addKeyword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity style={styles.addKeywordBtn} onPress={addKeyword}>
-                <Ionicons name="add" size={20} color={colors.black} />
-              </TouchableOpacity>
+        <FadeInUp delay={70} distance={12}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Palabras que activan el bot</Text>
+            <View style={styles.card}>
+              <View style={styles.keywordsList}>
+                {config.keywords.map(kw => (
+                  <View key={kw} style={styles.keyword}>
+                    <Text style={styles.keywordText}>{kw}</Text>
+                    <TouchableOpacity onPress={() => removeKeyword(kw)}>
+                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.addKeywordRow}>
+                <TextInput
+                  style={styles.keywordInput}
+                  placeholder="Nueva palabra..."
+                  placeholderTextColor={colors.textMuted}
+                  value={newKeyword}
+                  onChangeText={setNewKeyword}
+                  onSubmitEditing={addKeyword}
+                  autoCapitalize="none"
+                />
+                <PressScale style={styles.addKeywordBtn} onPress={addKeyword}>
+                  <Ionicons name="add" size={20} color={colors.black} />
+                </PressScale>
+              </View>
             </View>
           </View>
-        </View>
+        </FadeInUp>
 
         {/* Recordatorio */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recordatorio automático</Text>
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Minutos antes de la cita</Text>
-            <View style={styles.reminderRow}>
-              {[15, 30, 45, 60].map(min => (
-                <TouchableOpacity
-                  key={min}
-                  style={[
-                    styles.reminderBtn,
-                    config.reminderMinutes === min && styles.reminderBtnActive
-                  ]}
-                  onPress={() => update('reminderMinutes', min)}
-                >
-                  <Text style={[
-                    styles.reminderBtnText,
-                    config.reminderMinutes === min && styles.reminderBtnTextActive
-                  ]}>
-                    {min} min
-                  </Text>
-                </TouchableOpacity>
-              ))}
+        <FadeInUp delay={140} distance={12}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recordatorio automático</Text>
+            <View style={styles.card}>
+              <Text style={styles.cardLabel}>Minutos antes de la cita</Text>
+              <View style={styles.reminderRow}>
+                {[15, 30, 45, 60].map(min => (
+                  <PressScale
+                    key={min}
+                    style={[
+                      styles.reminderBtn,
+                      config.reminderMinutes === min && styles.reminderBtnActive
+                    ]}
+                    onPress={() => update('reminderMinutes', min)}
+                  >
+                    <Text style={[
+                      styles.reminderBtnText,
+                      config.reminderMinutes === min && styles.reminderBtnTextActive
+                    ]}>
+                      {min} min
+                    </Text>
+                  </PressScale>
+                ))}
+              </View>
             </View>
           </View>
-        </View>
+        </FadeInUp>
 
         {/* Mensaje de bienvenida */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mensaje de bienvenida</Text>
-          <View style={styles.card}>
-            <TextInput
-              style={styles.welcomeInput}
-              value={config.welcomeMessage}
-              onChangeText={v => update('welcomeMessage', v)}
-              multiline
-              numberOfLines={3}
-              placeholderTextColor={colors.textMuted}
-            />
+        <FadeInUp delay={210} distance={12}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Mensaje de bienvenida</Text>
+            <View style={styles.card}>
+              <TextInput
+                style={styles.welcomeInput}
+                value={config.welcomeMessage}
+                onChangeText={v => update('welcomeMessage', v)}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
           </View>
-        </View>
+        </FadeInUp>
 
         {/* Cerrar sesión */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={18} color={colors.error} />
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
+        <FadeInUp delay={280} distance={12}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={18} color={colors.error} />
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
+          </TouchableOpacity>
 
-        <Text style={styles.version}>Agendi v1.0.0</Text>
+          <View style={styles.footer}>
+            <Image source={logoGold} style={{ height: 40, width: 40 }} resizeMode="contain" />
+            <Text style={styles.version}>Agendi · v1.0.0</Text>
+          </View>
+        </FadeInUp>
       </ScrollView>
 
       {/* Botón guardar */}
       {hasChanges && (
-        <TouchableOpacity
+        <PressScale
           style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
           onPress={handleSave}
           disabled={saving}
@@ -225,10 +242,10 @@ export default function ConfigScreen({ navigation }) {
             ? <ActivityIndicator color={colors.black} />
             : <>
                 <Ionicons name="checkmark-circle" size={20} color={colors.black} />
-                <Text style={styles.saveBtnText}>Guardar cambios</Text>
+                <Text style={styles.saveBtnText}>GUARDAR CAMBIOS</Text>
               </>
           }
-        </TouchableOpacity>
+        </PressScale>
       )}
     </View>
   )
@@ -237,12 +254,14 @@ export default function ConfigScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
-  scroll: { padding: spacing.md, paddingBottom: 120 },
+  scroll: { padding: spacing.md, paddingBottom: 140 },
   section: { marginBottom: spacing.lg },
   sectionTitle: {
-    fontSize: 13, fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase', letterSpacing: 1,
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: colors.accent,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     marginBottom: spacing.sm,
   },
   card: {
@@ -251,8 +270,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardLabel: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  cardHint: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  cardLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.textPrimary },
+  cardHint: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   keywordsList: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
   keyword: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
@@ -260,12 +279,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 6,
     borderWidth: 1, borderColor: colors.accent,
   },
-  keywordText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  keywordText: { fontFamily: fonts.semiBold, color: colors.accent, fontSize: 13 },
   addKeywordRow: { flexDirection: 'row', gap: spacing.sm },
   keywordInput: {
     flex: 1, backgroundColor: colors.bgInput,
     borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 10,
-    color: colors.textPrimary, fontSize: 14,
+    color: colors.textPrimary, fontFamily: fonts.medium, fontSize: 14,
     borderWidth: 1, borderColor: colors.border,
   },
   addKeywordBtn: {
@@ -282,31 +301,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reminderBtnActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
-  reminderBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
+  reminderBtnText: { fontFamily: fonts.semiBold, color: colors.textSecondary, fontSize: 13 },
   reminderBtnTextActive: { color: colors.accent },
   welcomeInput: {
-    color: colors.textPrimary, fontSize: 14,
+    color: colors.textPrimary, fontFamily: fonts.medium, fontSize: 14,
     textAlignVertical: 'top', minHeight: 80,
   },
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: spacing.sm, paddingVertical: spacing.md,
     borderWidth: 1, borderColor: colors.error,
-    borderRadius: radius.md, marginBottom: spacing.sm,
+    borderRadius: radius.md, marginBottom: spacing.md,
   },
-  logoutText: { color: colors.error, fontSize: 15, fontWeight: '600' },
-  version: { textAlign: 'center', color: colors.textMuted, fontSize: 12, marginTop: spacing.sm },
+  logoutText: { fontFamily: fonts.semiBold, color: colors.error, fontSize: 15 },
+  footer: { alignItems: 'center', gap: 6, opacity: 0.6 },
+  version: { fontFamily: fonts.medium, textAlign: 'center', color: colors.textMuted, fontSize: 12 },
   saveBtn: {
-    position: 'absolute', bottom: spacing.lg,
+    position: 'absolute', bottom: 100,
     left: spacing.lg, right: spacing.lg,
     backgroundColor: colors.accent,
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', gap: spacing.sm,
     paddingVertical: 14, borderRadius: radius.md,
     shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35, shadowRadius: 14, elevation: 8,
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: colors.black, fontSize: 15, fontWeight: '700' },
+  saveBtnText: { color: colors.black, fontFamily: fonts.bold, fontSize: 14, letterSpacing: 1.5 },
 })

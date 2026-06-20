@@ -3,7 +3,7 @@ import {
   View, Text, Modal, TouchableOpacity, ScrollView,
   StyleSheet, Animated, Platform
 } from 'react-native'
-import { colors, spacing, radius } from '../services/theme'
+import { colors, spacing, radius, fonts } from '../services/theme'
 
 const ITEM_HEIGHT = 58
 const VISIBLE = 5
@@ -93,7 +93,7 @@ export default function TimePickerModal({ visible, value = '09:00', onConfirm, o
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
             <Text style={styles.cancelBtn}>Cancelar</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Seleccionar hora</Text>
+          <Text style={styles.title}>SELECCIONAR HORA</Text>
           <TouchableOpacity onPress={handleConfirm} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
             <Text style={styles.confirmBtn}>Listo</Text>
           </TouchableOpacity>
@@ -195,9 +195,11 @@ const styles = StyleSheet.create({
   sheet: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgElevated,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderColor: colors.border,
     paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
@@ -214,9 +216,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  title: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
-  cancelBtn: { fontSize: 15, color: colors.textSecondary },
-  confirmBtn: { fontSize: 15, fontWeight: '700', color: colors.accent },
+  title: { fontFamily: fonts.semiBold, fontSize: 13, letterSpacing: 2, color: colors.textPrimary },
+  cancelBtn: { fontFamily: fonts.medium, fontSize: 15, color: colors.textSecondary },
+  confirmBtn: { fontFamily: fonts.bold, fontSize: 15, color: colors.accent },
 
   pickerOuter: {
     alignItems: 'center',
@@ -247,7 +249,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     color: colors.textMuted,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     letterSpacing: 1.5,
   },
   colonSpace: {
@@ -264,7 +266,7 @@ const styles = StyleSheet.create({
   },
   colon: {
     fontSize: 30,
-    fontWeight: '300',
+    fontFamily: fonts.display,
     color: colors.accent,
   },
   item: {
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 30,
-    fontWeight: '300',
+    fontFamily: fonts.display,
     color: colors.textPrimary,
     letterSpacing: 2,
   },

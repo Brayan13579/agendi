@@ -69,6 +69,19 @@ async function getAppointmentByPhone(phone) {
   return upcoming[0] || null
 }
 
+async function getAppointmentsByPhone(phone) {
+  const db = getDb()
+  const snapshot = await db.collection('appointments')
+    .where('clientPhone', '==', phone)
+    .get()
+
+  const now = labelNow().toISOString()
+  return snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(a => a.status !== 'cancelled' && a.datetime >= now)
+    .sort((a, b) => a.datetime.localeCompare(b.datetime))
+}
+
 async function cancelAppointment(appointmentId) {
   const db = getDb()
   await db.collection('appointments').doc(appointmentId).update({
@@ -150,6 +163,7 @@ module.exports = {
   deleteSession,
   createAppointment,
   getAppointmentByPhone,
+  getAppointmentsByPhone,
   cancelAppointment,
   getUpcomingAppointments,
   markReminderSent,

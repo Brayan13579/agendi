@@ -65,7 +65,10 @@ async function getAvailableSlots(barberId = 'default', daysAhead = 3, serviceDur
   const availableSlots = []
 
   for (let dayOffset = 0; dayOffset <= daysAhead; dayOffset++) {
-    const date = new Date()
+    // Usar labelNow() en vez de new Date() para obtener la fecha en hora Bogotá.
+    // El servidor corre en UTC y después de las 7 PM Bogotá ya es medianoche UTC
+    // (día siguiente), lo que haría que el loop empiece en el día equivocado.
+    const date = labelNow()
     date.setDate(date.getDate() + dayOffset)
     date.setSeconds(0, 0)
 
@@ -89,7 +92,7 @@ async function getAvailableSlots(barberId = 'default', daysAhead = 3, serviceDur
     // Bogotá (UTC-5), así que se usa labelNow() para comparar en la misma convención.
     if (dayOffset === 0) {
       const minStart = labelNow()
-      minStart.setMinutes(minStart.getMinutes() + 60)
+      minStart.setMinutes(minStart.getMinutes() + 30)
       const minutesSinceMidnight = minStart.getHours() * 60 + minStart.getMinutes()
       const roundedMinutes = Math.ceil(minutesSinceMidnight / baseSlotMinutes) * baseSlotMinutes
       const minStartRounded = new Date(date)
@@ -123,7 +126,7 @@ async function getAvailableSlots(barberId = 'default', daysAhead = 3, serviceDur
     }
   }
 
-  return availableSlots
+  return availableSlots.slice(0, 10)
 }
 
 // Verificar justo antes de confirmar si un horario sigue libre (bloqueo manual o cita de otro cliente)

@@ -5,8 +5,9 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { getSchedule, updateSchedule } from '../services/api'
-import { colors, spacing, radius } from '../services/theme'
+import { colors, spacing, radius, fonts } from '../services/theme'
 import TimePickerModal from '../components/TimePickerModal'
+import { FadeInUp, PressScale } from '../components/Motion'
 import alert from '../services/alert'
 
 const DAYS = [
@@ -92,81 +93,90 @@ export default function ScheduleScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Duración de cada cita */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Duración de cada turno</Text>
-          <View style={styles.slotRow}>
-            {[15, 30, 45, 60].map(min => (
-              <TouchableOpacity
-                key={min}
-                style={[
-                  styles.slotOption,
-                  schedule.slotDuration === min && styles.slotOptionActive
-                ]}
-                onPress={() => {
-                  setSchedule(p => ({ ...p, slotDuration: min }))
-                  setHasChanges(true)
-                }}
-              >
-                <Text style={[
-                  styles.slotOptionText,
-                  schedule.slotDuration === min && styles.slotOptionTextActive
-                ]}>
-                  {min} min
-                </Text>
-              </TouchableOpacity>
-            ))}
+        <FadeInUp distance={12}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Duración de cada turno</Text>
+            <View style={styles.slotRow}>
+              {[15, 30, 45, 60].map(min => (
+                <PressScale
+                  key={min}
+                  style={[
+                    styles.slotOption,
+                    schedule.slotDuration === min && styles.slotOptionActive
+                  ]}
+                  onPress={() => {
+                    setSchedule(p => ({ ...p, slotDuration: min }))
+                    setHasChanges(true)
+                  }}
+                >
+                  <Text style={[
+                    styles.slotOptionText,
+                    schedule.slotDuration === min && styles.slotOptionTextActive
+                  ]}>
+                    {min} min
+                  </Text>
+                </PressScale>
+              ))}
+            </View>
           </View>
-        </View>
+        </FadeInUp>
 
         {/* Horario semanal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Horario semanal</Text>
-          {DAYS.map(({ key, label }) => {
+          <FadeInUp delay={60} distance={12}>
+            <Text style={styles.sectionTitle}>Horario semanal</Text>
+          </FadeInUp>
+          {DAYS.map(({ key, label }, idx) => {
             const day = schedule.weeklySchedule?.[key] || { active: false, start: '09:00', end: '18:00' }
             return (
-              <View key={key} style={styles.dayCard}>
-                <View style={styles.dayHeader}>
-                  <Text style={[styles.dayLabel, !day.active && styles.dayLabelInactive]}>
-                    {label}
-                  </Text>
-                  <Switch
-                    value={day.active}
-                    onValueChange={v => updateDay(key, 'active', v)}
-                    trackColor={{ false: colors.border, true: colors.accentDim }}
-                    thumbColor={day.active ? colors.accent : colors.textMuted}
-                  />
-                </View>
-
-                {day.active && (
-                  <View style={styles.timeRow}>
-                    <View style={styles.timeField}>
-                      <Text style={styles.timeLabel}>Desde</Text>
-                      <TouchableOpacity
-                        style={styles.timeBtn}
-                        onPress={() => setTimePicker({ dayKey: key, field: 'start', value: day.start })}
-                      >
-                        <Ionicons name="time-outline" size={14} color={colors.accent} />
-                        <Text style={styles.timeBtnText}>{day.start}</Text>
-                      </TouchableOpacity>
+              <FadeInUp key={key} delay={90 + idx * 35} distance={12}>
+                <View style={[styles.dayCard, !day.active && styles.dayCardInactive]}>
+                  <View style={styles.dayHeader}>
+                    <View style={styles.dayLabelRow}>
+                      <View style={[styles.dayDot, day.active ? styles.dayDotActive : styles.dayDotInactive]} />
+                      <Text style={[styles.dayLabel, !day.active && styles.dayLabelInactive]}>
+                        {label}
+                      </Text>
                     </View>
-                    <Ionicons name="arrow-forward" size={16} color={colors.textMuted} style={styles.arrow} />
-                    <View style={styles.timeField}>
-                      <Text style={styles.timeLabel}>Hasta</Text>
-                      <TouchableOpacity
-                        style={styles.timeBtn}
-                        onPress={() => setTimePicker({ dayKey: key, field: 'end', value: day.end })}
-                      >
-                        <Ionicons name="time-outline" size={14} color={colors.accent} />
-                        <Text style={styles.timeBtnText}>{day.end}</Text>
-                      </TouchableOpacity>
-                    </View>
+                    <Switch
+                      value={day.active}
+                      onValueChange={v => updateDay(key, 'active', v)}
+                      trackColor={{ false: colors.border, true: colors.accentDim }}
+                      thumbColor={day.active ? colors.accent : colors.textMuted}
+                    />
                   </View>
-                )}
 
-                {!day.active && (
-                  <Text style={styles.closedText}>Cerrado</Text>
-                )}
-              </View>
+                  {day.active && (
+                    <View style={styles.timeRow}>
+                      <View style={styles.timeField}>
+                        <Text style={styles.timeLabel}>Desde</Text>
+                        <PressScale
+                          style={styles.timeBtn}
+                          onPress={() => setTimePicker({ dayKey: key, field: 'start', value: day.start })}
+                        >
+                          <Ionicons name="time-outline" size={14} color={colors.accent} />
+                          <Text style={styles.timeBtnText}>{day.start}</Text>
+                        </PressScale>
+                      </View>
+                      <Ionicons name="arrow-forward" size={16} color={colors.textMuted} style={styles.arrow} />
+                      <View style={styles.timeField}>
+                        <Text style={styles.timeLabel}>Hasta</Text>
+                        <PressScale
+                          style={styles.timeBtn}
+                          onPress={() => setTimePicker({ dayKey: key, field: 'end', value: day.end })}
+                        >
+                          <Ionicons name="time-outline" size={14} color={colors.accent} />
+                          <Text style={styles.timeBtnText}>{day.end}</Text>
+                        </PressScale>
+                      </View>
+                    </View>
+                  )}
+
+                  {!day.active && (
+                    <Text style={styles.closedText}>Cerrado</Text>
+                  )}
+                </View>
+              </FadeInUp>
             )
           })}
         </View>
@@ -174,7 +184,7 @@ export default function ScheduleScreen() {
 
       {/* Botón guardar */}
       {hasChanges && (
-        <TouchableOpacity
+        <PressScale
           style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
           onPress={handleSave}
           disabled={saving}
@@ -183,10 +193,10 @@ export default function ScheduleScreen() {
             ? <ActivityIndicator color={colors.black} />
             : <>
                 <Ionicons name="checkmark-circle" size={20} color={colors.black} />
-                <Text style={styles.saveBtnText}>Guardar cambios</Text>
+                <Text style={styles.saveBtnText}>GUARDAR CAMBIOS</Text>
               </>
           }
-        </TouchableOpacity>
+        </PressScale>
       )}
 
       <TimePickerModal
@@ -205,12 +215,14 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
-  scroll: { padding: spacing.md, paddingBottom: 100 },
+  scroll: { padding: spacing.md, paddingBottom: 120 },
   section: { marginBottom: spacing.lg },
   sectionTitle: {
-    fontSize: 13, fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase', letterSpacing: 1,
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: colors.accent,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     marginBottom: spacing.sm,
   },
   slotRow: { flexDirection: 'row', gap: spacing.sm },
@@ -225,7 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentDim,
     borderColor: colors.accent,
   },
-  slotOptionText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
+  slotOptionText: { fontFamily: fonts.semiBold, color: colors.textSecondary, fontSize: 13 },
   slotOptionTextActive: { color: colors.accent },
   dayCard: {
     backgroundColor: colors.bgCard,
@@ -234,14 +246,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.border,
   },
+  dayCardInactive: { opacity: 0.7 },
   dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  dayLabel: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  dayLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dayDot: { width: 8, height: 8, borderRadius: 4 },
+  dayDotActive: { backgroundColor: colors.accent },
+  dayDotInactive: { backgroundColor: colors.textMuted },
+  dayLabel: { fontFamily: fonts.bold, fontSize: 16, color: colors.textPrimary },
   dayLabelInactive: { color: colors.textMuted },
-  closedText: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
+  closedText: { fontFamily: fonts.medium, fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,7 +266,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   timeField: { flex: 1 },
-  timeLabel: { fontSize: 11, color: colors.textSecondary, marginBottom: 4 },
+  timeLabel: { fontFamily: fonts.medium, fontSize: 11, color: colors.textSecondary, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   timeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -263,21 +280,22 @@ const styles = StyleSheet.create({
   },
   timeBtnText: {
     color: colors.textPrimary,
-    fontSize: 16, fontWeight: '700',
+    fontFamily: fonts.bold,
+    fontSize: 16,
     letterSpacing: 1,
   },
   arrow: { marginTop: 16 },
   saveBtn: {
-    position: 'absolute', bottom: spacing.lg,
+    position: 'absolute', bottom: 100,
     left: spacing.lg, right: spacing.lg,
     backgroundColor: colors.accent,
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', gap: spacing.sm,
     paddingVertical: 14, borderRadius: radius.md,
     shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35, shadowRadius: 14, elevation: 8,
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: colors.black, fontWeight: '700', fontSize: 15 },
+  saveBtnText: { color: colors.black, fontFamily: fonts.bold, fontSize: 14, letterSpacing: 1.5 },
 })

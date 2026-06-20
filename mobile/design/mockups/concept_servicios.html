@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Agendi — Servicios (mockup)</title>
+<link rel="stylesheet" href="sections.css">
+<style>
+  /* ---------- Específico de Servicios ---------- */
+  .featured{
+    position:relative; margin-top:18px; border-radius:26px 26px 26px 10px;
+    background:linear-gradient(155deg, #1F1613 0%, #181210 60%);
+    border:1px solid rgba(232,67,59,0.18);
+    box-shadow:0 0 0 1px rgba(232,67,59,0.05), 0 18px 40px -20px rgba(232,67,59,0.35);
+    padding:16px; overflow:hidden;
+  }
+  .featured-glow{
+    position:absolute; top:-40%; right:-30%; width:80%; height:120%;
+    background:radial-gradient(circle, rgba(232,67,59,0.25) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .featured-label{
+    position:relative; display:flex; align-items:center; gap:6px;
+    font-size:11px; letter-spacing:2.5px; color:var(--crimson-soft); font-weight:800; text-transform:uppercase;
+  }
+  .featured-label .dot{ width:6px; height:6px; border-radius:50%; background:var(--crimson); box-shadow:0 0 6px var(--crimson-glow); }
+  .featured-main{ position:relative; display:flex; align-items:center; gap:14px; margin-top:14px; }
+  .featured-icon{
+    width:54px; height:54px; border-radius:18px; flex-shrink:0;
+    background:var(--crimson-dim); border:1px solid rgba(232,67,59,0.4);
+    display:flex; align-items:center; justify-content:center; color:var(--crimson-soft);
+  }
+  .featured-icon .icon{ width:24px; height:24px; }
+  .featured-info{ flex:1; min-width:0; }
+  .featured-name{ font-family:'Bebas Neue', sans-serif; font-size:22px; letter-spacing:0.5px; }
+  .featured-meta{ display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-dim); margin-top:3px; font-weight:600; }
+  .featured-meta .icon{ width:13px; height:13px; }
+  .featured-price{ font-family:'Bebas Neue', sans-serif; font-size:24px; color:var(--accent-soft); }
+
+  .featured-chart{ position:relative; display:flex; align-items:flex-end; gap:6px; height:40px; margin-top:16px; }
+  .featured-chart .bar{ flex:1; background:var(--border); border-radius:4px 4px 0 0; }
+  .featured-chart .bar.active{ background:linear-gradient(180deg, var(--crimson), var(--crimson-soft)); }
+  .featured-chart-label{ position:relative; font-size:10px; color:var(--text-mute); font-weight:600; margin-top:6px; text-align:right; }
+
+  .service-card{
+    display:flex; align-items:center; gap:12px;
+    background:var(--bg-card); border:1px solid var(--border); border-radius:18px;
+    padding:12px; margin-bottom:10px;
+  }
+  .service-card:nth-child(odd){ border-radius:18px 18px 18px 6px; }
+  .service-card:nth-child(even){ border-radius:18px 6px 18px 18px; }
+  .service-icon{
+    width:42px; height:42px; border-radius:13px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .service-icon .icon{ width:19px; height:19px; }
+  .service-info{ flex:1; min-width:0; }
+  .service-name{ font-family:'Manrope',sans-serif; font-weight:800; font-size:14px; }
+  .service-bar-track{ height:4px; border-radius:2px; background:var(--border); margin-top:8px; overflow:hidden; width:100%; max-width:130px; }
+  .service-bar-fill{ height:100%; background:linear-gradient(90deg, var(--accent), var(--crimson)); border-radius:2px; }
+  .service-right{ text-align:right; flex-shrink:0; }
+  .service-price{ font-family:'Bebas Neue', sans-serif; font-size:17px; color:var(--accent-soft); }
+  .service-dur{ display:flex; align-items:center; justify-content:flex-end; gap:4px; font-size:11px; color:var(--text-dim); font-weight:600; margin-top:3px; }
+  .service-dur .icon{ width:12px; height:12px; }
+  .service-actions{ display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+
+  .fab-wrap{ position:absolute; bottom:90px; right:24px; width:56px; height:56px; }
+  .fab{
+    width:56px; height:56px; border-radius:28px; position:relative; z-index:1;
+    background:var(--crimson); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px -2px var(--crimson-glow); color:#fff;
+  }
+  .fab .icon{ width:26px; height:26px; }
+</style>
+</head>
+<body>
+
+<!-- ============ ICON DEFS ============ -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="ic-calendar" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></g>
+    <g id="ic-clock" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></g>
+    <g id="ic-cut" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></g>
+    <g id="ic-trend" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></g>
+    <g id="ic-edit" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></g>
+    <g id="ic-trash" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></g>
+    <g id="ic-plus" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>
+    <g id="ic-sliders" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></g>
+  </defs>
+</svg>
+
+<div>
+  <div class="label">Servicios</div>
+  <div class="frame">
+    <div class="screen">
+      <div class="anim" style="animation-delay:0s">
+        <div class="eyebrow">Agendi</div>
+        <div class="screen-title">Servicios</div>
+        <div class="screen-sub">Administra lo que ofreces</div>
+      </div>
+
+      <!-- Resumen -->
+      <div class="bento-row anim" style="animation-delay:.05s">
+        <div class="stat-card stat-a">
+          <div class="stat-badge crimson"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="stat-val">6</div>
+          <div class="stat-lbl">Activos</div>
+        </div>
+        <div class="stat-card stat-b">
+          <div class="stat-badge gold"><svg class="icon"><use href="#ic-trend"/></svg></div>
+          <div class="stat-val">$24.2k</div>
+          <div class="stat-lbl">Precio promedio</div>
+        </div>
+        <div class="stat-card stat-c">
+          <div class="ring-wrap"><div class="ring" style="--p:50"></div><div class="ring-center"><span>45m</span></div></div>
+          <div class="stat-lbl">Duración media</div>
+        </div>
+      </div>
+
+      <!-- Más solicitado -->
+      <div class="section anim" style="animation-delay:.1s" style="margin-top:0">
+        <div class="featured">
+          <div class="featured-glow"></div>
+          <div class="featured-label"><span class="dot"></span>Más solicitado</div>
+          <div class="featured-main">
+            <div class="featured-icon"><svg class="icon"><use href="#ic-cut"/></svg></div>
+            <div class="featured-info">
+              <div class="featured-name">Corte + Barba</div>
+              <div class="featured-meta"><svg class="icon"><use href="#ic-clock"/></svg>45 min</div>
+            </div>
+            <div class="featured-price">$28.000</div>
+          </div>
+          <div class="featured-chart">
+            <div class="bar" style="height:40%"></div>
+            <div class="bar" style="height:65%"></div>
+            <div class="bar" style="height:50%"></div>
+            <div class="bar" style="height:85%"></div>
+            <div class="bar active" style="height:100%"></div>
+          </div>
+          <div class="featured-chart-label">Reservas · últimas 5 semanas</div>
+        </div>
+      </div>
+
+      <!-- Lista de servicios -->
+      <div class="section anim" style="animation-delay:.15s">
+        <div class="section-title"><svg class="icon"><use href="#ic-cut"/></svg>Todos los servicios</div>
+
+        <div class="service-card anim" style="animation-delay:.18s">
+          <div class="service-icon" style="background:var(--accent-dim); color:var(--accent)"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="service-info">
+            <div class="service-name">Corte clásico</div>
+            <div class="service-bar-track"><div class="service-bar-fill" style="width:33%"></div></div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">$15.000</div>
+            <div class="service-dur"><svg class="icon"><use href="#ic-clock"/></svg>30 min</div>
+          </div>
+          <div class="service-actions">
+            <div class="icon-btn-sm"><svg class="icon"><use href="#ic-edit"/></svg></div>
+            <div class="icon-btn-sm danger"><svg class="icon"><use href="#ic-trash"/></svg></div>
+          </div>
+        </div>
+
+        <div class="service-card anim" style="animation-delay:.21s">
+          <div class="service-icon" style="background:var(--crimson-dim); color:var(--crimson-soft)"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="service-info">
+            <div class="service-name">Corte + Barba</div>
+            <div class="service-bar-track"><div class="service-bar-fill" style="width:50%"></div></div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">$28.000</div>
+            <div class="service-dur"><svg class="icon"><use href="#ic-clock"/></svg>45 min</div>
+          </div>
+          <div class="service-actions">
+            <div class="icon-btn-sm"><svg class="icon"><use href="#ic-edit"/></svg></div>
+            <div class="icon-btn-sm danger"><svg class="icon"><use href="#ic-trash"/></svg></div>
+          </div>
+        </div>
+
+        <div class="service-card anim" style="animation-delay:.24s">
+          <div class="service-icon" style="background:var(--pending-dim); color:var(--pending)"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="service-info">
+            <div class="service-name">Afeitado clásico</div>
+            <div class="service-bar-track"><div class="service-bar-fill" style="width:28%"></div></div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">$12.000</div>
+            <div class="service-dur"><svg class="icon"><use href="#ic-clock"/></svg>25 min</div>
+          </div>
+          <div class="service-actions">
+            <div class="icon-btn-sm"><svg class="icon"><use href="#ic-edit"/></svg></div>
+            <div class="icon-btn-sm danger"><svg class="icon"><use href="#ic-trash"/></svg></div>
+          </div>
+        </div>
+
+        <div class="service-card anim" style="animation-delay:.27s">
+          <div class="service-icon" style="background:var(--accent-dim); color:var(--accent)"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="service-info">
+            <div class="service-name">Diseño de barba</div>
+            <div class="service-bar-track"><div class="service-bar-fill" style="width:22%"></div></div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">$10.000</div>
+            <div class="service-dur"><svg class="icon"><use href="#ic-clock"/></svg>20 min</div>
+          </div>
+          <div class="service-actions">
+            <div class="icon-btn-sm"><svg class="icon"><use href="#ic-edit"/></svg></div>
+            <div class="icon-btn-sm danger"><svg class="icon"><use href="#ic-trash"/></svg></div>
+          </div>
+        </div>
+
+        <div class="service-card anim" style="animation-delay:.3s">
+          <div class="service-icon" style="background:var(--crimson-dim); color:var(--crimson-soft)"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="service-info">
+            <div class="service-name">Tinte</div>
+            <div class="service-bar-track"><div class="service-bar-fill" style="width:67%"></div></div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">$35.000</div>
+            <div class="service-dur"><svg class="icon"><use href="#ic-clock"/></svg>60 min</div>
+          </div>
+          <div class="service-actions">
+            <div class="icon-btn-sm"><svg class="icon"><use href="#ic-edit"/></svg></div>
+            <div class="icon-btn-sm danger"><svg class="icon"><use href="#ic-trash"/></svg></div>
+          </div>
+        </div>
+
+        <div class="service-card anim" style="animation-delay:.33s">
+          <div class="service-icon" style="background:var(--pending-dim); color:var(--pending)"><svg class="icon"><use href="#ic-cut"/></svg></div>
+          <div class="service-info">
+            <div class="service-name">Combo Premium</div>
+            <div class="service-bar-track"><div class="service-bar-fill" style="width:100%"></div></div>
+          </div>
+          <div class="service-right">
+            <div class="service-price">$45.000</div>
+            <div class="service-dur"><svg class="icon"><use href="#ic-clock"/></svg>90 min</div>
+          </div>
+          <div class="service-actions">
+            <div class="icon-btn-sm"><svg class="icon"><use href="#ic-edit"/></svg></div>
+            <div class="icon-btn-sm danger"><svg class="icon"><use href="#ic-trash"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAB (flotante sobre el contenido en la app real) -->
+      <div class="anim" style="animation-delay:.36s; display:flex; justify-content:flex-end; margin-top:18px; padding-bottom:18px;">
+        <div class="fab-wrap" style="position:relative; bottom:auto; right:auto;">
+          <div class="fab-pulse"></div>
+          <div class="fab"><svg class="icon"><use href="#ic-plus"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tabbar anim" style="animation-delay:.4s;">
+      <div class="tab"><svg class="icon"><use href="#ic-calendar"/></svg>Agenda</div>
+      <div class="tab"><svg class="icon"><use href="#ic-clock"/></svg>Horarios</div>
+      <div class="tab active"><svg class="icon"><use href="#ic-cut"/></svg>Servicios</div>
+      <div class="tab"><svg class="icon"><use href="#ic-sliders"/></svg>Ajustes</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

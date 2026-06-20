@@ -10,7 +10,8 @@ const STATES = {
   CHOOSING_DAY: 'choosing_day',
   CHOOSING_SLOT: 'choosing_slot',
   CONFIRMING: 'confirming',
-  CHANGING_NAME: 'changing_name'
+  CHANGING_NAME: 'changing_name',
+  CHOOSING_CANCEL: 'choosing_cancel'
 }
 
 const BOT_KEYWORDS = ['cita', 'agendar', 'reservar', 'turno', 'hora']
@@ -27,8 +28,28 @@ async function handleMessage(phone, messageText) {
 
   if (!session && !isKeyword) return
 
-  if ((text === 'cancelar' || text === 'cancel') && session?.state !== STATES.ASKING_NAME && session?.state !== STATES.CHANGING_NAME) {
+  if ((text === 'cancelar' || text === 'cancel') && session?.state !== STATES.ASKING_NAME) {
+    // Si el usuario está en medio del flujo de agendar, "cancelar" solo sale al menú
+    // sin tocar ninguna cita ya existente.
+    const inBookingFlow = session && [
+      STATES.CHOOSING_SERVICE, STATES.CHOOSING_DAY,
+      STATES.CHOOSING_SLOT, STATES.CONFIRMING,
+      STATES.CHOOSING_CANCEL
+    ].includes(session.state)
+    if (inBookingFlow) {
+      const client = await db.getClient(phone)
+      if (client) return showMainMenu(phone, client.name)
+      return db.deleteSession(phone)
+    }
     return handleCancel(phone)
+  }
+
+  // "menu", "menú", "inicio" o "0" devuelven al menú principal desde cualquier punto
+  const isMenuCommand = text === 'menu' || text === 'menú' || text === 'inicio' || text === '0'
+  if (isMenuCommand && session && session.state !== STATES.ASKING_NAME) {
+    const client = await db.getClient(phone)
+    if (client) return showMainMenu(phone, client.name)
+    return startFlow(phone, config)
   }
 
   if (!session) {
@@ -47,9 +68,10 @@ async function handleMessage(phone, messageText) {
     case STATES.CHOOSING_SERVICE: return handleServiceChoice(phone, text, session)
     case STATES.CHOOSING_DAY:   return handleDayChoice(phone, text, session)
     case STATES.CHOOSING_SLOT:  return handleSlotChoice(phone, text, session)
-    case STATES.CONFIRMING:     return handleConfirmation(phone, text, session)
-    case STATES.CHANGING_NAME:  return handleChangingName(phone, messageText, session)
-    default:                    return startFlow(phone, config)
+    case STATES.CONFIRMING:       return handleConfirmation(phone, text, session)
+    case STATES.CHANGING_NAME:    return handleChangingName(phone, messageText, session)
+    case STATES.CHOOSING_CANCEL:  return handleCancelChoice(phone, text, session)
+    default:                      return startFlow(phone, config)
   }
 }
 
@@ -109,9 +131,9 @@ async function handleMainMenu(phone, text, session) {
   if (text === 'menu_book' || text === '1' || text.includes('agendar')) {
     return startBooking(phone, session)
   } else if (text === 'menu_view' || text === '2' || text.includes('ver')) {
-    return showCurrentAppointment(phone, session)
+    return showAppointments(phone, session, false)
   } else if (text === 'menu_cancel' || text === '3') {
-    return handleCancel(phone)
+    return showAppointments(phone, session, true)
   } else if (text === 'menu_rename' || text === '4' || (text.includes('cambiar') && text.includes('nombre'))) {
     return startRename(phone, session)
   } else {
@@ -362,48 +384,57 @@ async function handleConfirmation(phone, text, session) {
   }
 }
 
-// ─── VER CITA ────────────────────────────────────────────────
+// ─── VER / CANCELAR CITAS ────────────────────────────────────
 
-async function showCurrentAppointment(phone, session) {
-  const appointment = await db.getAppointmentByPhone(phone)
+const STATUS_LABEL = { confirmed: '✅ Confirmada', pending: '⏳ Pendiente' }
 
-  if (!appointment) {
-    await db.saveSession(phone, { state: STATES.MAIN_MENU, clientName: session.clientName })
-    await wa.sendText(phone, '📭 No tienes ninguna cita activa.')
+async function showAppointments(phone, session, cancelMode = false) {
+  const appointments = await db.getAppointmentsByPhone(phone)
+
+  if (appointments.length === 0) {
+    await wa.sendText(phone, '📭 No tienes ninguna cita activa.\n\nEscribe *cita* para agendar una.')
     return showMainMenu(phone, session.clientName)
   }
 
-  await db.saveSession(phone, { state: STATES.MAIN_MENU, clientName: session.clientName })
-  await wa.sendButtons(
-    phone,
-    `📅 *Tu cita actual:*\n\n` +
-    `✂️  ${appointment.service}\n` +
-    `📅 ${appointment.date}\n` +
-    `🕐 ${appointment.time}`,
-    [
-      { id: 'menu_cancel', title: '❌ Cancelar cita' },
-      { id: 'menu_book',   title: '📅 Nueva cita' }
-    ]
-  )
+  await db.saveSession(phone, {
+    state: STATES.CHOOSING_CANCEL,
+    clientName: session.clientName,
+    appointments
+  })
+
+  let message = cancelMode
+    ? '❌ *¿Cuál cita quieres cancelar?*\n\n'
+    : '📅 *Tus citas activas:*\n\n'
+
+  appointments.forEach((a, i) => {
+    message += `*${i + 1}.* ${a.service} · ${a.date} · ${a.time} · ${STATUS_LABEL[a.status] || a.status}\n`
+  })
+
+  message += '\n_Responde con el número para cancelar esa cita, o escribe *menu* para volver._'
+  await wa.sendText(phone, message)
 }
 
-// ─── CANCELAR CITA ───────────────────────────────────────────
+async function handleCancelChoice(phone, text, session) {
+  const index = parseInt(text) - 1
+  const appointments = session.appointments
 
-async function handleCancel(phone) {
-  const appointment = await db.getAppointmentByPhone(phone)
-
-  if (!appointment) {
-    await db.deleteSession(phone)
-    await wa.sendText(phone, '📭 No tienes ninguna cita activa para cancelar.')
+  if (isNaN(index) || index < 0 || index >= appointments.length) {
+    await wa.sendText(phone, `Responde con un número del 1 al ${appointments.length}, o escribe *menu* para volver.`)
     return
   }
 
-  await db.cancelAppointment(appointment.id)
+  const appt = appointments[index]
+  await db.cancelAppointment(appt.id)
   await db.deleteSession(phone)
   await wa.sendText(phone,
-    `✅ Tu cita del *${appointment.date}* a las *${appointment.time}* fue cancelada.\n\n` +
-    `Cuando quieras agendar de nuevo, escribe *cita*.`
+    `✅ Listo. Tu cita de *${appt.service}* del *${appt.date}* a las *${appt.time}* fue cancelada.\n\n` +
+    `Escribe *cita* cuando quieras agendar de nuevo.`
   )
+}
+
+async function handleCancel(phone) {
+  const session = { clientName: (await db.getClient(phone))?.name || '' }
+  return showAppointments(phone, session, true)
 }
 
 // ─── CAMBIAR NOMBRE ──────────────────────────────────────────

@@ -1,38 +1,61 @@
 export const colors = {
-  // Fondo oscuro elegante
-  bg: '#0A0A0A',
-  bgCard: '#161616',
-  bgInput: '#1E1E1E',
+  // Fondo cálido — carbón casi negro con un toque sutil de calidez
+  bg: '#121110',
+  bgElevated: '#181715',
+  bgCard: '#1D1B18',
+  bgInput: '#252320',
+  bgInputFocus: '#2D2A26',
 
-  // Acento verde neón — identidad de Agendi
-  accent: '#00E676',
-  accentDim: '#00E67620',
-  accentDark: '#00C853',
+  // Acento latón — identidad de Agendi
+  accent: '#D4A24E',
+  accentSoft: '#E8C77E',
+  accentDim: 'rgba(212, 162, 78, 0.14)',
+  accentDark: '#A8782F',
 
-  // Texto
-  textPrimary: '#F5F5F5',
-  textSecondary: '#888888',
-  textMuted: '#444444',
+  // Texto cálido
+  textPrimary: '#F7F1E4',
+  textSecondary: '#AD9D89',
+  textMuted: '#5E5142',
 
-  // Estados
-  success: '#00E676',
-  warning: '#FFB300',
-  error: '#FF5252',
-  pending: '#40C4FF',
+  // Estados (tonos de la barbería: azul y rojo de poste)
+  success: '#7FA876',
+  successDim: 'rgba(127, 168, 118, 0.14)',
+  warning: '#E0A458',
+  warningDim: 'rgba(224, 164, 88, 0.14)',
+  error: '#C0594C',
+  errorDim: 'rgba(192, 89, 76, 0.14)',
+  pending: '#7C9CC4',
+  pendingDim: 'rgba(124, 156, 196, 0.14)',
 
   // Bordes
-  border: '#2A2A2A',
-  borderLight: '#333333',
+  border: '#322D27',
+  borderLight: '#46403980',
+
+  // Detalle del poste de barbero (logo y acentos)
+  poleCream: '#F2E8D8',
+  poleRed: '#B5453C',
+  poleBlue: '#4F6E94',
+
+  // Acento "spotlight" — carmesí para la próxima cita y elementos destacados
+  spotlight: '#E8433B',
+  spotlightSoft: '#F2766E',
+  spotlightDim: 'rgba(232, 67, 59, 0.14)',
+  spotlightDark: '#A8332C',
 
   // Blanco y negro
   white: '#FFFFFF',
-  black: '#000000'
+  black: '#0B0805',
 }
 
 export const fonts = {
-  regular: 'System',
-  medium: 'System',
-  bold: 'System'
+  display: 'BebasNeue_400Regular',
+  body: 'Manrope_400Regular',
+  medium: 'Manrope_500Medium',
+  semiBold: 'Manrope_600SemiBold',
+  bold: 'Manrope_700Bold',
+  extraBold: 'Manrope_800ExtraBold',
+  script: 'Caveat_700Bold',
+  scriptMedium: 'Caveat_600SemiBold',
 }
 
 export const spacing = {
@@ -54,17 +77,24 @@ export const radius = {
 
 export const shadow = {
   accent: {
-    shadowColor: '#00E676',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowColor: '#D4A24E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
     elevation: 8
   },
   card: {
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
     elevation: 4
+  },
+  spotlight: {
+    shadowColor: '#E8433B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8
   }
 }
