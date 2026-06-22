@@ -155,21 +155,53 @@ async function getBotConfig(barberId = 'default') {
   }
 }
 
-// ─── AUTENTICACIÓN ───────────────────────────────────────────
+// ─── USUARIOS ────────────────────────────────────────────────
 
-async function getAuthConfig() {
+async function getUserByPhone(phone) {
   const db = getDb()
-  const doc = await db.collection('settings').doc('auth').get()
+  const doc = await db.collection('users').doc(phone).get()
+  return doc.exists ? { phone, ...doc.data() } : null
+}
+
+async function createUser(phone, passwordHash) {
+  const db = getDb()
+  await db.collection('users').doc(phone).set({
+    phone,
+    passwordHash,
+    createdAt: new Date().toISOString()
+  })
+}
+
+async function updateUserPassword(phone, passwordHash) {
+  const db = getDb()
+  await db.collection('users').doc(phone).update({
+    passwordHash,
+    updatedAt: new Date().toISOString()
+  })
+}
+
+async function usersExist() {
+  const db = getDb()
+  const snap = await db.collection('users').limit(1).get()
+  return !snap.empty
+}
+
+// ─── OTP ─────────────────────────────────────────────────────
+
+async function saveOTP(phone, code, expiresAt) {
+  const db = getDb()
+  await db.collection('otp_codes').doc(phone).set({ code, expiresAt })
+}
+
+async function getOTP(phone) {
+  const db = getDb()
+  const doc = await db.collection('otp_codes').doc(phone).get()
   return doc.exists ? doc.data() : null
 }
 
-async function setAuthPassword(username, password) {
+async function deleteOTP(phone) {
   const db = getDb()
-  await db.collection('settings').doc('auth').set({
-    username,
-    password,
-    updatedAt: new Date().toISOString()
-  })
+  await db.collection('otp_codes').doc(phone).delete()
 }
 
 module.exports = {
@@ -188,6 +220,11 @@ module.exports = {
   getScheduleConfig,
   getBlockedSlots,
   getBotConfig,
-  getAuthConfig,
-  setAuthPassword
+  getUserByPhone,
+  createUser,
+  updateUserPassword,
+  usersExist,
+  saveOTP,
+  getOTP,
+  deleteOTP
 }

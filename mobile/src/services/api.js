@@ -1,25 +1,70 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+// URL del backend desplegado — cambiar si cambia el servidor
+const API_BASE_URL = 'https://agendi-production.up.railway.app'
+
 const api = axios.create({
+  baseURL: API_BASE_URL,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 })
 
-export async function initApi() {
-  const baseURL = await AsyncStorage.getItem('API_URL')
-  const apiKey = await AsyncStorage.getItem('API_KEY')
-  if (baseURL) api.defaults.baseURL = baseURL
-  if (apiKey) api.defaults.headers.common['x-api-key'] = apiKey
-}
-
+// Adjunta el JWT en cada petición automáticamente
 api.interceptors.request.use(async (config) => {
-  const apiKey = await AsyncStorage.getItem('API_KEY')
-  const baseURL = await AsyncStorage.getItem('API_URL')
-if (apiKey) config.headers.set('x-api-key', apiKey)
-  if (baseURL) config.baseURL = baseURL
+  const token = await AsyncStorage.getItem('AUTH_TOKEN')
+  if (token) config.headers.set('Authorization', `Bearer ${token}`)
   return config
 })
+
+// Si el servidor responde 401 (sesión expirada), vuelve al login
+api.interceptors.response.use(
+  res => res,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await AsyncStorage.removeItem('AUTH_TOKEN')
+    }
+    return Promise.reject(error)
+  }
+)
+
+export async function initApi() {
+  // Solo verifica que el token existe; el interceptor lo adjunta en cada llamada
+  const token = await AsyncStorage.getItem('AUTH_TOKEN')
+  if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────
+
+export async function login(phone, password) {
+  const res = await api.post('/auth/login', { phone, password })
+  return res.data // { success, token }
+}
+
+export async function setupAccount(phone, password) {
+  const res = await api.post('/auth/setup', { phone, password })
+  return res.data // { success, token }
+}
+
+export async function requestOTP(phone) {
+  const res = await api.post('/auth/request-otp', { phone })
+  return res.data
+}
+
+export async function verifyOTP(phone, code) {
+  const res = await api.post('/auth/verify-otp', { phone, code })
+  return res.data // { success, resetToken }
+}
+
+export async function resetPassword(resetToken, newPassword) {
+  const res = await api.post('/auth/reset-password', { resetToken, newPassword })
+  return res.data
+}
+
+export async function changePassword(currentPassword, newPassword) {
+  const res = await api.post('/auth/change-password', { currentPassword, newPassword })
+  return res.data
+}
 
 // ─── CITAS ───────────────────────────────────────────────────
 

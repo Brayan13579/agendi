@@ -77,7 +77,7 @@ export default function ConfigScreen({ navigation }) {
         text: 'Salir',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.multiRemove(['API_URL', 'API_KEY'])
+          await AsyncStorage.removeItem('AUTH_TOKEN')
           navigation.replace('Login')
         }
       }
@@ -98,7 +98,7 @@ export default function ConfigScreen({ navigation }) {
       <TouchableOpacity
         style={styles.logoutBtn}
         onPress={async () => {
-          await AsyncStorage.multiRemove(['API_URL', 'API_KEY'])
+          await AsyncStorage.removeItem('AUTH_TOKEN')
           navigation.replace('Login')
         }}
       >

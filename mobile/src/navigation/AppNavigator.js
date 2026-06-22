@@ -94,9 +94,8 @@ export default function AppNavigator() {
   useEffect(() => {
     async function checkSession() {
       try {
-        const apiUrl = await AsyncStorage.getItem('API_URL')
-        const apiKey = await AsyncStorage.getItem('API_KEY')
-        if (apiUrl && apiKey) {
+        const token = await AsyncStorage.getItem('AUTH_TOKEN')
+        if (token) {
           await initApi()
           setInitialRoute('Main')
         } else {

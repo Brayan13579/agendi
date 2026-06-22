@@ -1,18 +1,24 @@
 const express = require('express')
 const router = express.Router()
+const jwt = require('jsonwebtoken')
 const { getDb } = require('../config/firebase')
 const db = require('../services/database')
 const wa = require('../services/whatsapp')
 const scheduler = require('../services/scheduler')
 
-// Middleware de autenticación simple con API key
-// (En producción reemplazar con Firebase Auth)
+const JWT_SECRET = process.env.JWT_SECRET || 'agendi_dev_secret_changeme'
+
 function authMiddleware(req, res, next) {
-  const apiKey = req.headers['x-api-key']
-  if (apiKey !== process.env.BARBER_API_KEY) {
+  const authHeader = req.headers.authorization
+  if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No autorizado' })
   }
-  next()
+  try {
+    jwt.verify(authHeader.slice(7), JWT_SECRET)
+    next()
+  } catch {
+    return res.status(401).json({ error: 'Sesión expirada. Inicia sesión de nuevo.' })
+  }
 }
 
 router.use(authMiddleware)

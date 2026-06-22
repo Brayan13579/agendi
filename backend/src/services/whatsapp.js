@@ -105,11 +105,20 @@ async function sendBarberCancellation(to, clientName, reason) {
   await sendText(to, message)
 }
 
+async function sendOTPCode(phone, code) {
+  const message =
+    `🔐 *Código de verificación Agendi*\n\n` +
+    `Tu código es: *${code}*\n\n` +
+    `Válido por 5 minutos. No lo compartas con nadie.`
+  await sendText(phone, message)
+}
+
 module.exports = {
   sendText,
   sendButtons,
   sendList,
   sendConfirmation,
   sendReminder,
-  sendBarberCancellation
+  sendBarberCancellation,
+  sendOTPCode
 }
