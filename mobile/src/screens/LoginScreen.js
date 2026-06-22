@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, StyleSheet, ActivityIndicator,
-  KeyboardAvoidingView, ScrollView, Platform, Image,
-  useWindowDimensions
+  KeyboardAvoidingView, ScrollView, Platform, Image, Dimensions
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg'
@@ -14,57 +13,41 @@ import alert from '../services/alert'
 const brandLogo = require('../assets/images/brand-logo.png')
 const logoGold = require('../assets/images/logo-gold.png')
 const LOGO_RATIO = 1029 / 1412
+const GOLD_RATIO = 1 // logo-gold.png es aproximadamente cuadrado
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const BG_LOGO_WIDTH = SCREEN_W * 1.4
+const BG_LOGO_HEIGHT = BG_LOGO_WIDTH / LOGO_RATIO
+const MARK_WIDTH = Math.min(SCREEN_W * 0.55, 240)
+const MARK_HEIGHT = MARK_WIDTH / GOLD_RATIO
 
 export default function LoginScreen({ navigation }) {
-  const { width, height } = useWindowDimensions()
-  const isWide = width > 600
-
-  const bgLogoWidth = width * (isWide ? 0.9 : 1.4)
-  const bgLogoHeight = bgLogoWidth / LOGO_RATIO
-  const logoSize = Math.min(width * (isWide ? 0.28 : 0.52), 220)
-
-  const [serverUrl, setServerUrl] = useState('')
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('')
+  const [apiUrl, setApiUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
   const [loading, setLoading] = useState(false)
   const [focused, setFocused] = useState(null)
-  const [showServer, setShowServer] = useState(false)
 
   async function handleLogin() {
-    if (!username || !password) {
-      alert.alert('Campos requeridos', 'Escribe tu usuario y contraseña.')
-      return
-    }
-
-    const storedUrl = await AsyncStorage.getItem('API_URL')
-    const apiUrl = (serverUrl.trim() || storedUrl || '').replace(/\/$/, '')
-
-    if (!apiUrl) {
-      setShowServer(true)
-      alert.alert('Servidor requerido', 'Ingresa la URL del servidor primero.')
+    if (!apiUrl || !apiKey) {
+      alert.alert('Campos requeridos', 'Completa la URL del servidor y la clave.')
       return
     }
 
     setLoading(true)
     try {
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password: password.trim() })
+      const res = await fetch(`${apiUrl}/health`, {
+        headers: { 'x-api-key': apiKey }
       })
 
-      const data = await res.json()
-
-      if (res.ok && data.success) {
-        await AsyncStorage.setItem('API_URL', apiUrl)
-        await AsyncStorage.setItem('API_KEY', data.apiKey)
+      if (res.ok) {
+        await AsyncStorage.setItem('API_URL', apiUrl.trim())
+        await AsyncStorage.setItem('API_KEY', apiKey.trim())
         await initApi()
         navigation.replace('Main')
       } else {
-        alert.alert('Acceso denegado', data.error || 'Usuario o contraseña incorrectos.')
+        alert.alert('Error', 'No se pudo conectar. Verifica la URL y la clave.')
       }
     } catch (e) {
-      alert.alert('Error de conexión', 'No se pudo conectar al servidor. Verifica la URL.')
+      alert.alert('Error de conexión', 'Asegúrate de que el servidor esté corriendo.')
     } finally {
       setLoading(false)
     }
@@ -72,26 +55,17 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Fondo ambiental */}
+      {/* Fondo ambiental: logo grande y opaco de lado + halos de color, por toda la pantalla */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Image
-          source={brandLogo}
-          style={[styles.backgroundLogo, {
-            width: bgLogoWidth,
-            height: bgLogoHeight,
-            top: -bgLogoHeight * 0.08,
-            right: -bgLogoWidth * (isWide ? 0.3 : 0.42),
-          }]}
-          resizeMode="contain"
-        />
+        <Image source={brandLogo} style={styles.backgroundLogo} resizeMode="contain" />
         <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
           <Defs>
             <RadialGradient id="glowBrand" cx="50%" cy="26%" r="55%">
-              <Stop offset="0%" stopColor={colors.spotlight} stopOpacity={0.22} />
+              <Stop offset="0%" stopColor={colors.spotlight} stopOpacity={0.28} />
               <Stop offset="100%" stopColor={colors.spotlight} stopOpacity={0} />
             </RadialGradient>
             <RadialGradient id="glowForm" cx="50%" cy="100%" r="60%">
-              <Stop offset="0%" stopColor={colors.accent} stopOpacity={0.12} />
+              <Stop offset="0%" stopColor={colors.accent} stopOpacity={0.14} />
               <Stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
             </RadialGradient>
           </Defs>
@@ -105,92 +79,65 @@ export default function LoginScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={[styles.scrollContent, { minHeight: height }]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.inner, isWide && styles.innerWide]}>
+          {/* Marca: tag + insignia centrada (sin fondo, flota sobre la pantalla) */}
+          <FadeInUp distance={14} style={styles.brandBlock}>
+            <Text style={styles.brandTag}>PANEL DEL NEGOCIO</Text>
+            <Image source={logoGold} style={styles.brandMark} resizeMode="contain" />
+          </FadeInUp>
 
-            {/* Logo */}
-            <FadeInUp distance={14} style={styles.brandBlock}>
-              <Image
-                source={logoGold}
-                style={{ width: logoSize, height: logoSize }}
-                resizeMode="contain"
-              />
-            </FadeInUp>
+          {/* Formulario */}
+          <FadeInUp delay={140} distance={20} style={styles.form}>
+            <Text style={styles.label}>URL del servidor</Text>
+            <TextInput
+              style={[styles.input, focused === 'url' && styles.inputFocused]}
+              placeholder="https://tu-servidor.railway.app"
+              placeholderTextColor={colors.textMuted}
+              value={apiUrl}
+              onChangeText={setApiUrl}
+              onFocus={() => setFocused('url')}
+              onBlur={() => setFocused(null)}
+              autoCapitalize="none"
+              keyboardType="url"
+            />
 
-            {/* Formulario */}
-            <FadeInUp delay={120} distance={20} style={styles.form}>
-              <Text style={styles.formTitle}>Iniciar sesión</Text>
+            <Text style={styles.label}>Clave de acceso</Text>
+            <TextInput
+              style={[styles.input, focused === 'key' && styles.inputFocused]}
+              placeholder="agendi_barber_key_2024"
+              placeholderTextColor={colors.textMuted}
+              value={apiKey}
+              onChangeText={setApiKey}
+              onFocus={() => setFocused('key')}
+              onBlur={() => setFocused(null)}
+              secureTextEntry
+              autoCapitalize="none"
+            />
 
-              <Text style={styles.label}>Usuario</Text>
-              <TextInput
-                style={[styles.input, focused === 'user' && styles.inputFocused]}
-                placeholder="admin"
-                placeholderTextColor={colors.textMuted}
-                value={username}
-                onChangeText={setUsername}
-                onFocus={() => setFocused('user')}
-                onBlur={() => setFocused(null)}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+            <PressScale
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color={colors.black} />
+                : <Text style={styles.buttonText}>ENTRAR</Text>
+              }
+            </PressScale>
+          </FadeInUp>
 
-              <Text style={styles.label}>Contraseña</Text>
-              <TextInput
-                style={[styles.input, focused === 'pw' && styles.inputFocused]}
-                placeholder="••••••••"
-                placeholderTextColor={colors.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocused('pw')}
-                onBlur={() => setFocused(null)}
-                secureTextEntry
-                autoCapitalize="none"
-              />
+          <FadeInUp delay={240} style={styles.taglineBlock}>
+            <Text style={styles.tagline}>Agenda tu éxito,{'\n'}resalta tu belleza.</Text>
+          </FadeInUp>
 
-              {/* Servidor — colapsable */}
-              <PressScale onPress={() => setShowServer(v => !v)} style={styles.serverToggle}>
-                <Text style={styles.serverToggleText}>
-                  {showServer ? '▲ Ocultar servidor' : '⚙️ Configurar servidor'}
-                </Text>
-              </PressScale>
-
-              {showServer && (
-                <>
-                  <Text style={styles.label}>URL del servidor</Text>
-                  <TextInput
-                    style={[styles.input, focused === 'url' && styles.inputFocused]}
-                    placeholder="https://tu-servidor.railway.app"
-                    placeholderTextColor={colors.textMuted}
-                    value={serverUrl}
-                    onChangeText={setServerUrl}
-                    onFocus={() => setFocused('url')}
-                    onBlur={() => setFocused(null)}
-                    autoCapitalize="none"
-                    keyboardType="url"
-                  />
-                </>
-              )}
-
-              <PressScale
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleLogin}
-                disabled={loading}
-              >
-                {loading
-                  ? <ActivityIndicator color={colors.black} />
-                  : <Text style={styles.buttonText}>ENTRAR</Text>
-                }
-              </PressScale>
-            </FadeInUp>
-
-            <FadeInUp delay={260} style={styles.taglineBlock}>
-              <Text style={styles.tagline}>Agenda tu éxito,{'\n'}resalta tu belleza.</Text>
-            </FadeInUp>
-
-          </View>
+          <FadeInUp delay={300}>
+            <Text style={styles.hint}>
+              Encuentra la URL y la clave en el archivo .env de tu backend
+            </Text>
+          </FadeInUp>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -198,55 +145,78 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  flex: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    overflow: 'hidden',
+  },
+  flex: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingVertical: spacing.xl,
-  },
-  inner: {
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
+    paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
   },
-  innerWide: {
-    maxWidth: 400,
-  },
+
+  // Logo de marca como fondo, grande y opaco, recostado a un lado
   backgroundLogo: {
     position: 'absolute',
-    opacity: 0.07,
+    width: BG_LOGO_WIDTH,
+    height: BG_LOGO_HEIGHT,
+    top: -BG_LOGO_HEIGHT * 0.08,
+    right: -BG_LOGO_WIDTH * 0.42,
+    opacity: 0.08,
     transform: [{ rotate: '8deg' }],
   },
+
+  // Bloque de marca
   brandBlock: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
   },
+  brandTag: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    letterSpacing: 3,
+    color: colors.accent,
+    marginBottom: spacing.md,
+  },
+  brandMark: {
+    width: MARK_WIDTH,
+    height: MARK_HEIGHT,
+  },
+
+  // Lema, debajo del formulario
+  taglineBlock: {
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  tagline: {
+    fontFamily: fonts.script,
+    fontSize: 36,
+    lineHeight: 42,
+    color: colors.spotlightSoft,
+    textAlign: 'center',
+  },
+
+  // Formulario
   form: {
-    gap: spacing.xs,
-    backgroundColor: 'rgba(29, 27, 24, 0.80)',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(29, 27, 24, 0.72)',
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
     padding: spacing.lg,
-  },
-  formTitle: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    color: colors.textPrimary,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: spacing.md,
-    textAlign: 'center',
+    marginTop: spacing.lg,
   },
   label: {
     fontFamily: fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 1.2,
+    fontSize: 12,
+    letterSpacing: 1,
     textTransform: 'uppercase',
     color: colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: 6,
     marginTop: spacing.sm,
   },
   input: {
@@ -264,16 +234,6 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: colors.bgInputFocus,
   },
-  serverToggle: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.sm,
-    paddingVertical: 4,
-  },
-  serverToggleText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
   button: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,
@@ -286,22 +246,20 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  buttonDisabled: { opacity: 0.6 },
+  buttonDisabled: {
+    opacity: 0.6
+  },
   buttonText: {
     color: colors.black,
     fontFamily: fonts.bold,
     fontSize: 15,
     letterSpacing: 2,
   },
-  taglineBlock: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  tagline: {
-    fontFamily: fonts.script,
-    fontSize: 32,
-    lineHeight: 40,
-    color: colors.spotlightSoft,
+  hint: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.textMuted,
     textAlign: 'center',
-  },
+    marginTop: spacing.xl,
+  }
 })

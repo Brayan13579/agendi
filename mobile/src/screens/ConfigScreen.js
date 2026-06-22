@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getBotConfig, updateBotConfig, changePassword } from '../services/api'
+import { getBotConfig, updateBotConfig } from '../services/api'
 import { colors, spacing, radius, fonts } from '../services/theme'
 import { Image } from 'react-native'
 import { FadeInUp, PressScale } from '../components/Motion'
@@ -19,9 +19,6 @@ export default function ConfigScreen({ navigation }) {
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [newKeyword, setNewKeyword] = useState('')
-  const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' })
-  const [pwLoading, setPwLoading] = useState(false)
-  const [pwFocused, setPwFocused] = useState(null)
 
   useEffect(() => { loadConfig() }, [])
 
@@ -70,31 +67,6 @@ export default function ConfigScreen({ navigation }) {
       alert.alert('Error', 'No se pudo guardar la configuración.')
     } finally {
       setSaving(false)
-    }
-  }
-
-  async function handleChangePassword() {
-    if (!pwForm.current || !pwForm.newPw || !pwForm.confirm) {
-      alert.alert('Campos requeridos', 'Completa todos los campos.')
-      return
-    }
-    if (pwForm.newPw !== pwForm.confirm) {
-      alert.alert('Error', 'Las contraseñas nuevas no coinciden.')
-      return
-    }
-    if (pwForm.newPw.length < 4) {
-      alert.alert('Error', 'La nueva contraseña debe tener al menos 4 caracteres.')
-      return
-    }
-    setPwLoading(true)
-    try {
-      await changePassword(pwForm.current, pwForm.newPw)
-      alert.alert('✅ Listo', 'Contraseña actualizada correctamente.')
-      setPwForm({ current: '', newPw: '', confirm: '' })
-    } catch (e) {
-      alert.alert('Error', e.response?.data?.error || 'Contraseña actual incorrecta.')
-    } finally {
-      setPwLoading(false)
     }
   }
 
@@ -245,63 +217,8 @@ export default function ConfigScreen({ navigation }) {
           </View>
         </FadeInUp>
 
-        {/* Seguridad */}
-        <FadeInUp delay={280} distance={12}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Seguridad</Text>
-            <View style={styles.card}>
-              <Text style={styles.cardLabel}>Cambiar contraseña</Text>
-
-              <TextInput
-                style={[styles.pwInput, pwFocused === 'cur' && styles.pwInputFocused]}
-                placeholder="Contraseña actual"
-                placeholderTextColor={colors.textMuted}
-                value={pwForm.current}
-                onChangeText={v => setPwForm(p => ({ ...p, current: v }))}
-                onFocus={() => setPwFocused('cur')}
-                onBlur={() => setPwFocused(null)}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <TextInput
-                style={[styles.pwInput, pwFocused === 'new' && styles.pwInputFocused]}
-                placeholder="Nueva contraseña"
-                placeholderTextColor={colors.textMuted}
-                value={pwForm.newPw}
-                onChangeText={v => setPwForm(p => ({ ...p, newPw: v }))}
-                onFocus={() => setPwFocused('new')}
-                onBlur={() => setPwFocused(null)}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <TextInput
-                style={[styles.pwInput, pwFocused === 'con' && styles.pwInputFocused]}
-                placeholder="Confirmar nueva contraseña"
-                placeholderTextColor={colors.textMuted}
-                value={pwForm.confirm}
-                onChangeText={v => setPwForm(p => ({ ...p, confirm: v }))}
-                onFocus={() => setPwFocused('con')}
-                onBlur={() => setPwFocused(null)}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-
-              <PressScale
-                style={[styles.pwBtn, pwLoading && styles.pwBtnDisabled]}
-                onPress={handleChangePassword}
-                disabled={pwLoading}
-              >
-                {pwLoading
-                  ? <ActivityIndicator color={colors.black} size="small" />
-                  : <Text style={styles.pwBtnText}>ACTUALIZAR CONTRASEÑA</Text>
-                }
-              </PressScale>
-            </View>
-          </View>
-        </FadeInUp>
-
         {/* Cerrar sesión */}
-        <FadeInUp delay={350} distance={12}>
+        <FadeInUp delay={280} distance={12}>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={18} color={colors.error} />
             <Text style={styles.logoutText}>Cerrar sesión</Text>
@@ -399,24 +316,6 @@ const styles = StyleSheet.create({
   logoutText: { fontFamily: fonts.semiBold, color: colors.error, fontSize: 15 },
   footer: { alignItems: 'center', gap: 6, opacity: 0.6 },
   version: { fontFamily: fonts.medium, textAlign: 'center', color: colors.textMuted, fontSize: 12 },
-  pwInput: {
-    backgroundColor: colors.bgInput,
-    borderWidth: 1, borderColor: colors.border,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md, paddingVertical: 12,
-    color: colors.textPrimary, fontFamily: fonts.medium, fontSize: 14,
-    marginTop: spacing.sm,
-  },
-  pwInputFocused: { borderColor: colors.accent, backgroundColor: colors.bgInputFocus },
-  pwBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    paddingVertical: 13,
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  pwBtnDisabled: { opacity: 0.6 },
-  pwBtnText: { color: colors.black, fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1.5 },
   saveBtn: {
     position: 'absolute', bottom: 100,
     left: spacing.lg, right: spacing.lg,

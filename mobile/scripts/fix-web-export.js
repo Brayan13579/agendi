@@ -42,3 +42,21 @@ walk(distDir, (file) => {
 })
 
 console.log(`Listo. ${filesPatched} archivo(s) actualizados, ${totalReplacements} referencia(s) reemplazadas.`)
+
+// Agrega flex-direction: column al #root para que React Native Web llene la pantalla completa
+// en navegadores móviles (sin esto queda espacio blanco debajo del contenido).
+const indexPath = path.join(distDir, 'index.html')
+if (fs.existsSync(indexPath)) {
+  const html = fs.readFileSync(indexPath, 'utf-8')
+  const fixed = html.replace(
+    /#root\s*\{([^}]*)\}/,
+    (match, inner) => {
+      if (inner.includes('flex-direction')) return match
+      return `#root {${inner}  flex-direction: column;\n      }`
+    }
+  )
+  if (fixed !== html) {
+    fs.writeFileSync(indexPath, fixed)
+    console.log('Parcheado index.html: añadido flex-direction: column a #root')
+  }
+}

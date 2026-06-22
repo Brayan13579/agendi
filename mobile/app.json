@@ -18,6 +18,9 @@
     "scheme": "agendi",
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "web": {
+      "backgroundColor": "#121110"
+    }
   }
 }
