@@ -13,9 +13,7 @@ const JWT_EXPIRES = '7d'
 const OTP_TTL_MS = 5 * 60 * 1000
 const BCRYPT_ROUNDS = 12
 
-// POST /auth/login
-// - Super admin: busca en colección superadmin/, devuelve role:'superadmin'
-// - Admin de negocio: busca en userIndex → tenantId → users, devuelve role:'admin'
+// POST /auth/login — solo para admins de tenant (app móvil)
 router.post('/auth/login', async (req, res) => {
   try {
     const { phone, password } = req.body
@@ -23,23 +21,12 @@ router.post('/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Teléfono y contraseña requeridos' })
     }
 
-    // Verificar si es super admin
-    const superAdmin = await db.getSuperAdmin(phone)
-    if (superAdmin) {
-      const valid = await bcrypt.compare(password, superAdmin.passwordHash)
-      if (!valid) return res.status(401).json({ error: 'Credenciales incorrectas' })
-
-      const token = jwt.sign({ phone, role: 'superadmin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
-      return res.json({ success: true, token, role: 'superadmin' })
-    }
-
-    // Admin de tenant: lookup global por teléfono
+    // Lookup global por teléfono → tenantId
     const index = await db.getUserIndex(phone)
     if (!index) return res.status(401).json({ error: 'Credenciales incorrectas' })
 
     const { tenantId } = index
 
-    // Verificar que el tenant esté activo
     const tenant = await db.getTenant(tenantId)
     if (!tenant || !tenant.active) {
       return res.status(403).json({ error: 'Cuenta suspendida. Contacta al administrador.' })
@@ -55,6 +42,28 @@ router.post('/auth/login', async (req, res) => {
     res.json({ success: true, token, role: 'admin' })
   } catch (error) {
     console.error('❌ Error en login:', error.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
+// POST /auth/superadmin/login — solo para el super admin (panel web)
+router.post('/auth/superadmin/login', async (req, res) => {
+  try {
+    const { phone, password } = req.body
+    if (!phone || !password) {
+      return res.status(400).json({ error: 'Teléfono y contraseña requeridos' })
+    }
+
+    const superAdmin = await db.getSuperAdmin(phone)
+    if (!superAdmin) return res.status(401).json({ error: 'Credenciales incorrectas' })
+
+    const valid = await bcrypt.compare(password, superAdmin.passwordHash)
+    if (!valid) return res.status(401).json({ error: 'Credenciales incorrectas' })
+
+    const token = jwt.sign({ phone, role: 'superadmin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
+    res.json({ success: true, token, role: 'superadmin' })
+  } catch (error) {
+    console.error('❌ Error en login superadmin:', error.message)
     res.status(500).json({ error: 'Error interno' })
   }
 })

@@ -27,7 +27,7 @@ api.interceptors.response.use(
 
 // Auth
 export const login = (phone, password) =>
-  api.post('/auth/login', { phone, password })
+  api.post('/auth/superadmin/login', { phone, password })
 
 // Tenants (super admin)
 export const listTenants = () =>
