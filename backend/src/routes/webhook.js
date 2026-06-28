@@ -1,9 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const { handleMessage } = require('../bot/handler')
+const db = require('../services/database')
 
 // ─── VERIFICACIÓN DEL WEBHOOK (requerido por Meta) ────────────
-// Meta llama a este endpoint cuando configuras el webhook
 router.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode']
   const token = req.query['hub.verify_token']
@@ -20,26 +20,36 @@ router.get('/webhook', (req, res) => {
 
 // ─── RECIBIR MENSAJES ─────────────────────────────────────────
 router.post('/webhook', async (req, res) => {
-  // Responder 200 inmediatamente (Meta requiere respuesta rápida)
-  res.sendStatus(200)
+  res.sendStatus(200) // Meta requiere respuesta rápida
 
   try {
     const body = req.body
 
-    // Verificar que es un mensaje de WhatsApp
     if (body.object !== 'whatsapp_business_account') return
 
     const entry = body.entry?.[0]
     const change = entry?.changes?.[0]
     const value = change?.value
 
-    // Solo procesar mensajes entrantes (no estados de entrega)
     if (!value?.messages) return
 
     const message = value.messages[0]
     const phone = message.from
 
-    // Extraer texto de mensajes de texto e interactivos (botones / listas)
+    // Identificar a qué tenant pertenece este número de WhatsApp
+    const phoneNumberId = value.metadata?.phone_number_id
+    if (!phoneNumberId) {
+      console.warn('⚠️ Webhook sin phone_number_id en metadata')
+      return
+    }
+
+    const tenant = await db.getTenantByPhoneId(phoneNumberId)
+    if (!tenant || !tenant.active) {
+      console.warn(`⚠️ Tenant no encontrado o inactivo para phoneNumberId: ${phoneNumberId}`)
+      return
+    }
+
+    // Extraer texto del mensaje
     let messageText
     if (message.type === 'text') {
       messageText = message.text.body
@@ -56,9 +66,11 @@ router.post('/webhook', async (req, res) => {
       return
     }
 
-    console.log(`📩 Mensaje de ${phone}: ${messageText}`)
+    const maskedPhone = phone.slice(0, -4).replace(/\d/g, '*') + phone.slice(-4)
+    console.log(`📩 [${tenant.name}] Mensaje de ${maskedPhone}`)
 
-    await handleMessage(phone, messageText)
+    const waConfig = { token: tenant.whatsappToken, phoneId: tenant.phoneNumberId }
+    await handleMessage(phone, messageText, tenant.id, waConfig)
   } catch (error) {
     console.error('❌ Error procesando webhook:', error.message)
   }

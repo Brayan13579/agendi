@@ -1,17 +1,16 @@
 const cron = require('node-cron')
-const { getDb } = require('../config/firebase')
+const db = require('../services/database')
 const wa = require('../services/whatsapp')
 
-let isRunning = false // Evita ejecuciones simultáneas
+let isRunning = false
 
 function startReminderCron() {
   cron.schedule('* * * * *', async () => {
-    // Si la ejecución anterior no terminó, saltar esta
     if (isRunning) return
     isRunning = true
 
     try {
-      await checkReminders()
+      await checkRemindersForAllTenants()
     } catch (error) {
       console.error('❌ Error inesperado en cron:', error.message)
     } finally {
@@ -22,70 +21,73 @@ function startReminderCron() {
   console.log('⏰ Cron de recordatorios iniciado')
 }
 
-async function checkReminders() {
-  const db = getDb()
-
-  // Obtener configuración del recordatorio
-  let reminderMinutes = 30
+async function checkRemindersForAllTenants() {
+  let tenants
   try {
-    const configDoc = await db.collection('botConfig').doc('default').get()
-    if (configDoc.exists) {
-      reminderMinutes = configDoc.data().reminderMinutes || 30
-    }
-  } catch {
-    // Si no se puede leer la config, usar valor por defecto
+    tenants = await db.listTenants()
+  } catch (error) {
+    console.error('❌ Error obteniendo tenants para recordatorios:', error.message)
+    return
   }
 
-  // Ventana de tiempo: ±1 minuto alrededor del tiempo objetivo
+  const activeTenants = tenants.filter(t => t.active)
+  if (activeTenants.length === 0) return
+
+  await Promise.all(activeTenants.map(tenant => checkRemindersForTenant(tenant)))
+}
+
+async function checkRemindersForTenant(tenant) {
+  const tenantId = tenant.id
+  const waConfig = { token: tenant.whatsappToken, phoneId: tenant.phoneNumberId }
+
+  let reminderMinutes = 30
+  try {
+    const config = await db.getBotConfig(tenantId)
+    reminderMinutes = config.reminderMinutes || 30
+  } catch {
+    // Usar valor por defecto si no se puede leer la config
+  }
+
   const now = new Date()
   const targetTime = new Date(now.getTime() + reminderMinutes * 60 * 1000)
   const from = new Date(targetTime.getTime() - 60 * 1000).toISOString()
   const to   = new Date(targetTime.getTime() + 60 * 1000).toISOString()
 
-  // Query simple — solo campos necesarios
-  let snapshot
+  let appointments
   try {
-    snapshot = await db.collection('appointments')
-      .where('status', '==', 'confirmed')
-      .where('reminderSent', '==', false)
-      .where('datetime', '>=', from)
-      .where('datetime', '<=', to)
-      .get()
+    appointments = await db.getUpcomingAppointments(tenantId, from, to)
   } catch (error) {
-    console.error('❌ Error en query de recordatorios:', error.message)
+    console.error(`❌ [${tenantId}] Error en query de recordatorios:`, error.message)
     if (error.message.includes('FAILED_PRECONDITION')) {
       console.info('💡 Crea el índice compuesto en Firebase Console: status + reminderSent + datetime')
     }
     return
   }
 
-  if (snapshot.empty) return
+  if (appointments.length === 0) return
 
-  console.log(`⏰ Enviando ${snapshot.size} recordatorio(s)...`)
+  console.log(`⏰ [${tenant.name}] Enviando ${appointments.length} recordatorio(s)...`)
 
-  for (const doc of snapshot.docs) {
-    const appointment = doc.data()
-
+  for (const appointment of appointments) {
     if (!appointment.clientPhone || !appointment.clientName) {
-      console.warn(`⚠️ Cita ${doc.id} sin datos de cliente, saltando.`)
+      console.warn(`⚠️ Cita ${appointment.id} sin datos de cliente, saltando.`)
       continue
     }
 
     try {
-      // Marcar como enviado ANTES de enviar para evitar duplicados
-      await db.collection('appointments').doc(doc.id).update({ reminderSent: true })
-
-      await wa.sendReminder(appointment.clientPhone, appointment)
-      console.log(`✅ Recordatorio enviado a ${appointment.clientName}`)
-
+      await db.markReminderSent(tenantId, appointment.id)
+      await wa.sendReminder(appointment.clientPhone, appointment, waConfig)
+      console.log(`✅ [${tenant.name}] Recordatorio enviado a ${appointment.clientName}`)
     } catch (error) {
-      console.error(`❌ Error con ${appointment.clientName}:`, error.message)
-
-      // Revertir el flag para reintentarlo en el próximo ciclo
+      console.error(`❌ [${tenant.name}] Error con ${appointment.clientName}:`, error.message)
       try {
-        await db.collection('appointments').doc(doc.id).update({ reminderSent: false })
+        // Revertir para reintentarlo en el próximo ciclo
+        const { getDb } = require('../config/firebase')
+        await getDb().collection('tenants').doc(tenantId)
+          .collection('appointments').doc(appointment.id)
+          .update({ reminderSent: false })
       } catch {
-        // Silencioso — mejor no reenviar que romper el servidor
+        // Silencioso
       }
     }
   }

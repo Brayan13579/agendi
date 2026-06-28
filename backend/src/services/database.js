@@ -1,19 +1,21 @@
 const { getDb } = require('../config/firebase')
 const { labelNow } = require('../utils/time')
 
+// ─── HELPER ──────────────────────────────────────────────────
+
+function col(tenantId, collectionName) {
+  return getDb().collection('tenants').doc(tenantId).collection(collectionName)
+}
+
 // ─── CLIENTES ───────────────────────────────────────────────
 
-// Buscar cliente por número de teléfono
-async function getClient(phone) {
-  const db = getDb()
-  const doc = await db.collection('clients').doc(phone).get()
+async function getClient(tenantId, phone) {
+  const doc = await col(tenantId, 'clients').doc(phone).get()
   return doc.exists ? { id: doc.id, ...doc.data() } : null
 }
 
-// Crear o actualizar cliente
-async function saveClient(phone, name) {
-  const db = getDb()
-  await db.collection('clients').doc(phone).set({
+async function saveClient(tenantId, phone, name) {
+  await col(tenantId, 'clients').doc(phone).set({
     name,
     phone,
     createdAt: new Date().toISOString()
@@ -21,32 +23,27 @@ async function saveClient(phone, name) {
 }
 
 // ─── SESIONES DE CONVERSACIÓN ────────────────────────────────
-// Guardamos el estado de cada conversación activa del bot
 
-async function getSession(phone) {
-  const db = getDb()
-  const doc = await db.collection('sessions').doc(phone).get()
+async function getSession(tenantId, phone) {
+  const doc = await col(tenantId, 'sessions').doc(phone).get()
   return doc.exists ? doc.data() : null
 }
 
-async function saveSession(phone, data) {
-  const db = getDb()
-  await db.collection('sessions').doc(phone).set({
+async function saveSession(tenantId, phone, data) {
+  await col(tenantId, 'sessions').doc(phone).set({
     ...data,
     updatedAt: new Date().toISOString()
   })
 }
 
-async function deleteSession(phone) {
-  const db = getDb()
-  await db.collection('sessions').doc(phone).delete()
+async function deleteSession(tenantId, phone) {
+  await col(tenantId, 'sessions').doc(phone).delete()
 }
 
 // ─── CITAS ───────────────────────────────────────────────────
 
-async function createAppointment(data) {
-  const db = getDb()
-  const ref = await db.collection('appointments').add({
+async function createAppointment(tenantId, data) {
+  const ref = await col(tenantId, 'appointments').add({
     status: 'confirmed',
     ...data,
     createdAt: new Date().toISOString()
@@ -54,9 +51,8 @@ async function createAppointment(data) {
   return ref.id
 }
 
-async function getAppointmentByPhone(phone) {
-  const db = getDb()
-  const snapshot = await db.collection('appointments')
+async function getAppointmentByPhone(tenantId, phone) {
+  const snapshot = await col(tenantId, 'appointments')
     .where('clientPhone', '==', phone)
     .get()
 
@@ -69,9 +65,8 @@ async function getAppointmentByPhone(phone) {
   return upcoming[0] || null
 }
 
-async function getAppointmentsByPhone(phone) {
-  const db = getDb()
-  const snapshot = await db.collection('appointments')
+async function getAppointmentsByPhone(tenantId, phone) {
+  const snapshot = await col(tenantId, 'appointments')
     .where('clientPhone', '==', phone)
     .get()
 
@@ -82,18 +77,15 @@ async function getAppointmentsByPhone(phone) {
     .sort((a, b) => a.datetime.localeCompare(b.datetime))
 }
 
-async function cancelAppointment(appointmentId) {
-  const db = getDb()
-  await db.collection('appointments').doc(appointmentId).update({
+async function cancelAppointment(tenantId, appointmentId) {
+  await col(tenantId, 'appointments').doc(appointmentId).update({
     status: 'cancelled',
     cancelledAt: new Date().toISOString()
   })
 }
 
-// Obtener citas próximas para enviar recordatorios
-async function getUpcomingAppointments(fromDate, toDate) {
-  const db = getDb()
-  const snapshot = await db.collection('appointments')
+async function getUpcomingAppointments(tenantId, fromDate, toDate) {
+  const snapshot = await col(tenantId, 'appointments')
     .where('status', '==', 'confirmed')
     .where('datetime', '>=', fromDate)
     .where('datetime', '<=', toDate)
@@ -103,18 +95,16 @@ async function getUpcomingAppointments(fromDate, toDate) {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
 }
 
-async function markReminderSent(appointmentId) {
-  const db = getDb()
-  await db.collection('appointments').doc(appointmentId).update({
+async function markReminderSent(tenantId, appointmentId) {
+  await col(tenantId, 'appointments').doc(appointmentId).update({
     reminderSent: true
   })
 }
 
 // ─── SERVICIOS ───────────────────────────────────────────────
 
-async function getServices() {
-  const db = getDb()
-  const snapshot = await db.collection('services')
+async function getServices(tenantId) {
+  const snapshot = await col(tenantId, 'services')
     .where('active', '==', true)
     .orderBy('order')
     .get()
@@ -124,18 +114,13 @@ async function getServices() {
 
 // ─── HORARIOS ────────────────────────────────────────────────
 
-// Obtener la configuración de horarios del barbero
-async function getScheduleConfig(barberId = 'default') {
-  const db = getDb()
-  const doc = await db.collection('schedules').doc(barberId).get()
+async function getScheduleConfig(tenantId) {
+  const doc = await col(tenantId, 'schedules').doc('default').get()
   return doc.exists ? doc.data() : null
 }
 
-// Obtener slots bloqueados (vacaciones, urgencias)
-async function getBlockedSlots(barberId = 'default') {
-  const db = getDb()
-  const snapshot = await db.collection('blockedSlots')
-    .where('barberId', '==', barberId)
+async function getBlockedSlots(tenantId) {
+  const snapshot = await col(tenantId, 'blockedSlots')
     .where('datetime', '>=', labelNow().toISOString())
     .get()
 
@@ -144,87 +129,208 @@ async function getBlockedSlots(barberId = 'default') {
 
 // ─── CONFIGURACIÓN DEL BOT ───────────────────────────────────
 
-async function getBotConfig(barberId = 'default') {
-  const db = getDb()
-  const doc = await db.collection('botConfig').doc(barberId).get()
+async function getBotConfig(tenantId) {
+  const doc = await col(tenantId, 'botConfig').doc('default').get()
   return doc.exists ? doc.data() : {
     keywords: ['cita', 'agendar', 'reservar', 'turno', 'hora'],
     reminderMinutes: 30,
     botActive: true,
-    welcomeMessage: '¡Hola! 👋 Soy el asistente de la barbería. ¿En qué te puedo ayudar?'
+    welcomeMessage: '¡Hola! 👋 Soy el asistente. ¿En qué te puedo ayudar?'
   }
 }
 
-// ─── USUARIOS ────────────────────────────────────────────────
+// ─── USUARIOS DEL TENANT ─────────────────────────────────────
 
-async function getUserByPhone(phone) {
-  const db = getDb()
-  const doc = await db.collection('users').doc(phone).get()
+async function getUserByPhone(tenantId, phone) {
+  const doc = await col(tenantId, 'users').doc(phone).get()
   return doc.exists ? { phone, ...doc.data() } : null
 }
 
-async function createUser(phone, passwordHash) {
-  const db = getDb()
-  await db.collection('users').doc(phone).set({
+async function createUser(tenantId, phone, passwordHash) {
+  await col(tenantId, 'users').doc(phone).set({
     phone,
     passwordHash,
     createdAt: new Date().toISOString()
   })
 }
 
-async function updateUserPassword(phone, passwordHash) {
-  const db = getDb()
-  await db.collection('users').doc(phone).update({
+async function updateUserPassword(tenantId, phone, passwordHash) {
+  await col(tenantId, 'users').doc(phone).update({
     passwordHash,
     updatedAt: new Date().toISOString()
   })
 }
 
-async function usersExist() {
-  const db = getDb()
-  const snap = await db.collection('users').limit(1).get()
+async function tenantUsersExist(tenantId) {
+  const snap = await col(tenantId, 'users').limit(1).get()
   return !snap.empty
 }
 
 // ─── OTP ─────────────────────────────────────────────────────
 
-async function saveOTP(phone, code, expiresAt) {
-  const db = getDb()
-  await db.collection('otp_codes').doc(phone).set({ code, expiresAt })
+async function saveOTP(tenantId, phone, code, expiresAt) {
+  await col(tenantId, 'otp_codes').doc(phone).set({ code, expiresAt })
 }
 
-async function getOTP(phone) {
-  const db = getDb()
-  const doc = await db.collection('otp_codes').doc(phone).get()
+async function getOTP(tenantId, phone) {
+  const doc = await col(tenantId, 'otp_codes').doc(phone).get()
   return doc.exists ? doc.data() : null
 }
 
-async function deleteOTP(phone) {
+async function deleteOTP(tenantId, phone) {
+  await col(tenantId, 'otp_codes').doc(phone).delete()
+}
+
+// ─── SUPER ADMIN ─────────────────────────────────────────────
+
+async function getSuperAdmin(phone) {
   const db = getDb()
-  await db.collection('otp_codes').doc(phone).delete()
+  const doc = await db.collection('superadmin').doc(phone).get()
+  return doc.exists ? { phone, ...doc.data() } : null
+}
+
+async function createSuperAdmin(phone, passwordHash) {
+  const db = getDb()
+  await db.collection('superadmin').doc(phone).set({
+    phone,
+    passwordHash,
+    role: 'superadmin',
+    createdAt: new Date().toISOString()
+  })
+}
+
+async function updateSuperAdminPassword(phone, passwordHash) {
+  const db = getDb()
+  await db.collection('superadmin').doc(phone).update({
+    passwordHash,
+    updatedAt: new Date().toISOString()
+  })
+}
+
+// OTP del super admin se guarda dentro de su propio documento
+async function saveSuperAdminOTP(phone, code, expiresAt) {
+  const db = getDb()
+  await db.collection('superadmin').doc(phone).set({ otp: { code, expiresAt } }, { merge: true })
+}
+
+async function getSuperAdminOTP(phone) {
+  const db = getDb()
+  const doc = await db.collection('superadmin').doc(phone).get()
+  return doc.exists ? (doc.data().otp || null) : null
+}
+
+async function deleteSuperAdminOTP(phone) {
+  const db = getDb()
+  const { FieldValue } = require('firebase-admin/firestore')
+  await db.collection('superadmin').doc(phone).update({ otp: FieldValue.delete() })
+}
+
+// ─── USER INDEX (login por teléfono global) ──────────────────
+
+async function getUserIndex(phone) {
+  const db = getDb()
+  const doc = await db.collection('userIndex').doc(phone).get()
+  return doc.exists ? doc.data() : null
+}
+
+async function setUserIndex(phone, tenantId) {
+  const db = getDb()
+  await db.collection('userIndex').doc(phone).set({ tenantId, role: 'admin' })
+}
+
+async function deleteUserIndex(phone) {
+  const db = getDb()
+  await db.collection('userIndex').doc(phone).delete()
+}
+
+// ─── GESTIÓN DE TENANTS ──────────────────────────────────────
+
+async function createTenant(tenantId, data) {
+  const db = getDb()
+  await db.collection('tenants').doc(tenantId).set({
+    ...data,
+    active: true,
+    createdAt: new Date().toISOString()
+  })
+}
+
+async function getTenant(tenantId) {
+  const db = getDb()
+  const doc = await db.collection('tenants').doc(tenantId).get()
+  return doc.exists ? { id: doc.id, ...doc.data() } : null
+}
+
+async function listTenants() {
+  const db = getDb()
+  const snap = await db.collection('tenants').get()
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+}
+
+async function getTenantByPhoneId(phoneNumberId) {
+  const db = getDb()
+  const snap = await db.collection('tenants')
+    .where('phoneNumberId', '==', phoneNumberId)
+    .limit(1)
+    .get()
+  if (snap.empty) return null
+  const doc = snap.docs[0]
+  return { id: doc.id, ...doc.data() }
+}
+
+async function updateTenant(tenantId, data) {
+  const db = getDb()
+  await db.collection('tenants').doc(tenantId).update({
+    ...data,
+    updatedAt: new Date().toISOString()
+  })
 }
 
 module.exports = {
+  // Clientes
   getClient,
   saveClient,
+  // Sesiones
   getSession,
   saveSession,
   deleteSession,
+  // Citas
   createAppointment,
   getAppointmentByPhone,
   getAppointmentsByPhone,
   cancelAppointment,
   getUpcomingAppointments,
   markReminderSent,
+  // Servicios
   getServices,
+  // Horarios
   getScheduleConfig,
   getBlockedSlots,
+  // Config bot
   getBotConfig,
+  // Usuarios tenant
   getUserByPhone,
   createUser,
   updateUserPassword,
-  usersExist,
+  tenantUsersExist,
+  // OTP
   saveOTP,
   getOTP,
-  deleteOTP
+  deleteOTP,
+  // Super admin
+  getSuperAdmin,
+  createSuperAdmin,
+  updateSuperAdminPassword,
+  saveSuperAdminOTP,
+  getSuperAdminOTP,
+  deleteSuperAdminOTP,
+  // User index
+  getUserIndex,
+  setUserIndex,
+  deleteUserIndex,
+  // Tenants
+  createTenant,
+  getTenant,
+  listTenants,
+  getTenantByPhoneId,
+  updateTenant
 }
