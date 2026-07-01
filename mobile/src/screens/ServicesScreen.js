@@ -166,56 +166,64 @@ export default function ServicesScreen() {
           </View>
 
           <View style={styles.modalBody}>
-            <Text style={styles.label}>Nombre del servicio</Text>
-            <TextInput
-              style={[styles.input, focusedField === 'name' && styles.inputFocused]}
-              placeholder="Ej: Corte clásico"
-              placeholderTextColor={colors.textMuted}
-              value={form.name}
-              onChangeText={v => setForm(p => ({ ...p, name: v }))}
-              onFocus={() => setFocusedField('name')}
-              onBlur={() => setFocusedField(null)}
-            />
+            <FadeInUp delay={0} distance={10}>
+              <Text style={styles.label}>Nombre del servicio</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'name' && styles.inputFocused]}
+                placeholder="Ej: Corte clásico"
+                placeholderTextColor={colors.textMuted}
+                value={form.name}
+                onChangeText={v => setForm(p => ({ ...p, name: v }))}
+                onFocus={() => setFocusedField('name')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </FadeInUp>
 
-            <Text style={styles.label}>Precio</Text>
-            <TextInput
-              style={[styles.input, focusedField === 'price' && styles.inputFocused]}
-              placeholder="Ej: 15000"
-              placeholderTextColor={colors.textMuted}
-              value={form.price}
-              onChangeText={v => setForm(p => ({ ...p, price: v }))}
-              onFocus={() => setFocusedField('price')}
-              onBlur={() => setFocusedField(null)}
-              keyboardType="numeric"
-            />
+            <FadeInUp delay={60} distance={10}>
+              <Text style={styles.label}>Precio</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'price' && styles.inputFocused]}
+                placeholder="Ej: 15000"
+                placeholderTextColor={colors.textMuted}
+                value={form.price}
+                onChangeText={v => setForm(p => ({ ...p, price: v }))}
+                onFocus={() => setFocusedField('price')}
+                onBlur={() => setFocusedField(null)}
+                keyboardType="numeric"
+              />
+            </FadeInUp>
 
-            <Text style={styles.label}>Duración (minutos)</Text>
-            <View style={styles.durationRow}>
-              {['15', '30', '45', '60', '90'].map(d => (
-                <PressScale
-                  key={d}
-                  style={[styles.durationBtn, form.duration === d && styles.durationBtnActive]}
-                  onPress={() => setForm(p => ({ ...p, duration: d }))}
-                >
-                  <Text style={[styles.durationText, form.duration === d && styles.durationTextActive]}>
-                    {d}
-                  </Text>
-                </PressScale>
-              ))}
-            </View>
+            <FadeInUp delay={120} distance={10}>
+              <Text style={styles.label}>Duración (minutos)</Text>
+              <View style={styles.durationRow}>
+                {['15', '30', '45', '60', '90'].map(d => (
+                  <PressScale
+                    key={d}
+                    style={[styles.durationBtn, form.duration === d && styles.durationBtnActive]}
+                    onPress={() => setForm(p => ({ ...p, duration: d }))}
+                  >
+                    <Text style={[styles.durationText, form.duration === d && styles.durationTextActive]}>
+                      {d}
+                    </Text>
+                  </PressScale>
+                ))}
+              </View>
+            </FadeInUp>
 
-            <PressScale
-              style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              {saving
-                ? <ActivityIndicator color={colors.black} />
-                : <Text style={styles.saveBtnText}>
-                    {editing ? 'GUARDAR CAMBIOS' : 'AGREGAR SERVICIO'}
-                  </Text>
-              }
-            </PressScale>
+            <FadeInUp delay={180} distance={10}>
+              <PressScale
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving
+                  ? <ActivityIndicator color={colors.black} />
+                  : <Text style={styles.saveBtnText}>
+                      {editing ? 'GUARDAR CAMBIOS' : 'AGREGAR SERVICIO'}
+                    </Text>
+                }
+              </PressScale>
+            </FadeInUp>
           </View>
         </View>
       </Modal>

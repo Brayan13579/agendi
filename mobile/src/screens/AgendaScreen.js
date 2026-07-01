@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   View, Text, StyleSheet,
-  RefreshControl, ActivityIndicator, Linking, Animated, Easing, AccessibilityInfo
+  RefreshControl, ActivityIndicator, Linking, Animated, Easing, AccessibilityInfo,
+  LayoutAnimation, UIManager, Platform
 } from 'react-native'
+
+if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Rect, Defs, RadialGradient, Stop } from 'react-native-svg'
@@ -123,8 +126,14 @@ export default function AgendaScreen() {
   useEffect(() => {
     const id = scrollY.addListener(({ value }) => {
       setIsPinned(prev => {
-        if (!prev && value >= HERO_HEIGHT) return true
-        if (prev && value <= HERO_HEIGHT * 0.25) return false
+        if (!prev && value >= HERO_HEIGHT) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+          return true
+        }
+        if (prev && value <= HERO_HEIGHT * 0.25) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+          return false
+        }
         return prev
       })
     })
@@ -731,7 +740,7 @@ function TimelineRow({ item, index, isNext, onWhatsapp, onConfirm, onCancel, onM
   const delay = Math.min(index * 35, 380)
 
   if (item.type === 'now') {
-    return <NowMarker />
+    return <FadeInUp distance={6} duration={300}><NowMarker /></FadeInUp>
   }
 
   if (item.type === 'booked') {

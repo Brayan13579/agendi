@@ -33,7 +33,7 @@ export default function TenantDetail() {
         name: t.name || '',
         adminPhone: t.adminPhone || '',
         phoneNumberId: t.phoneNumberId || '',
-        whatsappToken: t.whatsappToken || ''
+        whatsappToken: ''
       })
     } catch {
       setError('Error cargando el negocio')

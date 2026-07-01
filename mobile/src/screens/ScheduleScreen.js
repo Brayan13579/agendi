@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Switch,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, LayoutAnimation, UIManager, Platform
 } from 'react-native'
+
+if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)
 import { Ionicons } from '@expo/vector-icons'
 import { getSchedule, updateSchedule } from '../services/api'
 import { colors, spacing, radius, fonts } from '../services/theme'
@@ -60,6 +62,7 @@ export default function ScheduleScreen() {
   }
 
   function updateDay(dayKey, field, value) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
     setSchedule(prev => ({
       ...prev,
       weeklySchedule: {

@@ -87,12 +87,13 @@ router.post('/tenants', async (req, res) => {
   }
 })
 
-// GET /superadmin/tenants/:id — detalle de un negocio (incluye token para edición)
+// GET /superadmin/tenants/:id — detalle de un negocio (token redactado por seguridad)
 router.get('/tenants/:id', async (req, res) => {
   try {
     const tenant = await db.getTenant(req.params.id)
     if (!tenant) return res.status(404).json({ error: 'Negocio no encontrado' })
-    res.json({ tenant })
+    const { whatsappToken, ...safe } = tenant
+    res.json({ tenant: { ...safe, hasWhatsappToken: !!whatsappToken } })
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: 'Error interno' })
@@ -106,7 +107,7 @@ router.put('/tenants/:id', async (req, res) => {
     const updates = {}
     if (name !== undefined) updates.name = name
     if (phoneNumberId !== undefined) updates.phoneNumberId = phoneNumberId
-    if (whatsappToken !== undefined) updates.whatsappToken = whatsappToken
+    if (whatsappToken) updates.whatsappToken = whatsappToken
     if (adminPhone !== undefined) updates.adminPhone = adminPhone
 
     await db.updateTenant(req.params.id, updates)

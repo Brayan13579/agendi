@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Switch,
-  TouchableOpacity, ActivityIndicator, TextInput, Image
+  TouchableOpacity, ActivityIndicator, TextInput, Image,
+  LayoutAnimation, UIManager, Platform
 } from 'react-native'
+
+if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBotConfig, updateBotConfig } from '../services/api'
@@ -44,6 +47,7 @@ export default function ConfigScreen({ navigation }) {
       alert.alert('Ya existe', 'Esa palabra clave ya está en la lista.')
       return
     }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
     update('keywords', [...config.keywords, kw])
     setNewKeyword('')
   }
@@ -53,6 +57,7 @@ export default function ConfigScreen({ navigation }) {
       alert.alert('Mínimo una', 'Debe haber al menos una palabra clave.')
       return
     }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
     update('keywords', config.keywords.filter(k => k !== kw))
   }
 

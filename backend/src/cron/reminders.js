@@ -43,7 +43,8 @@ async function checkRemindersForTenant(tenant) {
   let reminderMinutes = 30
   try {
     const config = await db.getBotConfig(tenantId)
-    reminderMinutes = config.reminderMinutes || 30
+    if (config.reminderHours != null) reminderMinutes = config.reminderHours * 60
+    else if (config.reminderMinutes != null) reminderMinutes = config.reminderMinutes
   } catch {
     // Usar valor por defecto si no se puede leer la config
   }
