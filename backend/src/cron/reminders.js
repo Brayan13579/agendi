@@ -1,6 +1,7 @@
 const cron = require('node-cron')
 const db = require('../services/database')
 const wa = require('../services/whatsapp')
+const { getDb } = require('../config/firebase')
 
 let isRunning = false
 
@@ -33,7 +34,7 @@ async function checkRemindersForAllTenants() {
   const activeTenants = tenants.filter(t => t.active)
   if (activeTenants.length === 0) return
 
-  await Promise.all(activeTenants.map(tenant => checkRemindersForTenant(tenant)))
+  await Promise.allSettled(activeTenants.map(tenant => checkRemindersForTenant(tenant)))
 }
 
 async function checkRemindersForTenant(tenant) {
@@ -83,12 +84,11 @@ async function checkRemindersForTenant(tenant) {
       console.error(`❌ [${tenant.name}] Error con ${appointment.clientName}:`, error.message)
       try {
         // Revertir para reintentarlo en el próximo ciclo
-        const { getDb } = require('../config/firebase')
         await getDb().collection('tenants').doc(tenantId)
           .collection('appointments').doc(appointment.id)
           .update({ reminderSent: false })
-      } catch {
-        // Silencioso
+      } catch (revertErr) {
+        console.error(`⚠️ [${tenant.name}] No se pudo revertir reminderSent para cita ${appointment.id}:`, revertErr.message)
       }
     }
   }

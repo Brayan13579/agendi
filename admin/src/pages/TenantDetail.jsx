@@ -70,11 +70,15 @@ export default function TenantDetail() {
   }
 
   async function handleToggleActive() {
+    const action = tenant.active ? 'suspender' : 'activar'
+    if (!confirm(`¿Seguro que deseas ${action} "${tenant.name}"?`)) return
+    const newActive = !tenant.active
+    setTenant(prev => ({ ...prev, active: newActive }))
     try {
-      await setTenantActive(id, !tenant.active)
-      setTenant(prev => ({ ...prev, active: !prev.active }))
-      flash(`Negocio ${!tenant.active ? 'activado' : 'suspendido'}`)
+      await setTenantActive(id, newActive)
+      flash(`Negocio ${newActive ? 'activado' : 'suspendido'}`)
     } catch {
+      setTenant(prev => ({ ...prev, active: tenant.active }))
       flash('Error actualizando el estado', true)
     }
   }

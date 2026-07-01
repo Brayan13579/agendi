@@ -182,7 +182,9 @@ export default function AgendaScreen() {
   }
 
   function openWhatsApp(phone) {
-    Linking.openURL(`https://wa.me/${phone}`)
+    Linking.openURL(`https://wa.me/${phone}`).catch(() =>
+      alert.alert('Error', 'No se pudo abrir WhatsApp.')
+    )
   }
 
   async function handleUrgentAlert() {

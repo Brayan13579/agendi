@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react'
 import {
   View, Text, Modal, TouchableOpacity, ScrollView,
-  StyleSheet, Animated, Platform
+  StyleSheet, Animated, Platform, InteractionManager
 } from 'react-native'
 import { colors, spacing, radius, fonts } from '../services/theme'
 
@@ -46,10 +46,10 @@ export default function TimePickerModal({ visible, value = '09:00', onConfirm, o
       ]).start()
       hourOffset.current = initHour * ITEM_HEIGHT
       minuteOffset.current = mIdx * ITEM_HEIGHT
-      setTimeout(() => {
+      InteractionManager.runAfterInteractions(() => {
         hourRef.current?.scrollTo({ y: initHour * ITEM_HEIGHT, animated: false })
         minuteRef.current?.scrollTo({ y: mIdx * ITEM_HEIGHT, animated: false })
-      }, 80)
+      })
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, {

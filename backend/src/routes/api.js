@@ -48,6 +48,9 @@ router.get('/appointments', async (req, res) => {
 
     if (date) {
       const start = new Date(date)
+      if (isNaN(start.getTime())) {
+        return res.status(400).json({ error: 'Fecha inválida' })
+      }
       start.setHours(0, 0, 0, 0)
       const end = new Date(date)
       end.setHours(23, 59, 59, 999)
@@ -254,20 +257,21 @@ router.post('/urgent-alert', async (req, res) => {
     const { reason, date } = req.body
     const targetDate = date || new Date().toISOString().split('T')[0]
     const start = new Date(targetDate)
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({ error: 'Fecha inválida' })
+    }
     start.setHours(0, 0, 0, 0)
     const end = new Date(targetDate)
     end.setHours(23, 59, 59, 999)
 
-    const snapshot = await col(req.tenantId, 'appointments')
-      .where('status', '==', 'confirmed')
-      .get()
-
     const startISO = start.toISOString()
     const endISO = end.toISOString()
-    const targets = snapshot.docs.filter(doc => {
-      const dt = doc.data().datetime
-      return dt >= startISO && dt <= endISO
-    })
+    const snapshot = await col(req.tenantId, 'appointments')
+      .where('datetime', '>=', startISO)
+      .where('datetime', '<=', endISO)
+      .get()
+
+    const targets = snapshot.docs.filter(doc => doc.data().status === 'confirmed')
 
     const tenant = await db.getTenant(req.tenantId)
     const waConfig = tenant ? { token: tenant.whatsappToken, phoneId: tenant.phoneNumberId } : {}
@@ -307,11 +311,12 @@ router.get('/bot-config', async (req, res) => {
 // PUT /api/bot-config
 router.put('/bot-config', async (req, res) => {
   try {
-    const { botActive, keywords, reminderHours, welcomeMessage } = req.body
+    const { botActive, keywords, reminderHours, reminderMinutes, welcomeMessage } = req.body
     const update = {}
     if (botActive !== undefined) update.botActive = botActive
     if (keywords !== undefined) update.keywords = keywords
     if (reminderHours !== undefined) update.reminderHours = reminderHours
+    if (reminderMinutes !== undefined) update.reminderMinutes = reminderMinutes
     if (welcomeMessage !== undefined) update.welcomeMessage = welcomeMessage
     await col(req.tenantId, 'botConfig').doc('default').set(update, { merge: true })
     res.json({ success: true })

@@ -110,6 +110,15 @@ router.put('/tenants/:id', async (req, res) => {
     if (whatsappToken) updates.whatsappToken = whatsappToken
     if (adminPhone !== undefined) updates.adminPhone = adminPhone
 
+    // Si cambia el adminPhone, actualizar el userIndex para que el nuevo número pueda loguear
+    if (adminPhone !== undefined) {
+      const tenant = await db.getTenant(req.params.id)
+      if (tenant && tenant.adminPhone && tenant.adminPhone !== adminPhone) {
+        await db.deleteUserIndex(tenant.adminPhone)
+        await db.setUserIndex(adminPhone, req.params.id)
+      }
+    }
+
     await db.updateTenant(req.params.id, updates)
     res.json({ success: true })
   } catch (error) {

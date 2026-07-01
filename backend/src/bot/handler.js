@@ -11,6 +11,7 @@ const STATES = {
   CHOOSING_SLOT: 'choosing_slot',
   CONFIRMING: 'confirming',
   CHANGING_NAME: 'changing_name',
+  VIEWING_APPOINTMENTS: 'viewing_appointments',
   CHOOSING_CANCEL: 'choosing_cancel'
 }
 
@@ -66,8 +67,9 @@ async function handleMessage(phone, messageText, tenantId, waConfig = {}) {
     case STATES.CHOOSING_DAY:     return handleDayChoice(phone, text, session, tenantId, waConfig)
     case STATES.CHOOSING_SLOT:    return handleSlotChoice(phone, text, session, tenantId, waConfig)
     case STATES.CONFIRMING:       return handleConfirmation(phone, text, session, tenantId, waConfig)
-    case STATES.CHANGING_NAME:    return handleChangingName(phone, messageText, session, tenantId, waConfig)
-    case STATES.CHOOSING_CANCEL:  return handleCancelChoice(phone, text, session, tenantId, waConfig)
+    case STATES.CHANGING_NAME:          return handleChangingName(phone, messageText, session, tenantId, waConfig)
+    case STATES.VIEWING_APPOINTMENTS:   return showMainMenu(phone, session.clientName, tenantId, waConfig)
+    case STATES.CHOOSING_CANCEL:        return handleCancelChoice(phone, text, session, tenantId, waConfig)
     default:                      return startFlow(phone, config, tenantId, waConfig)
   }
 }
@@ -401,7 +403,7 @@ async function showAppointments(phone, session, cancelMode = false, tenantId, wa
   }
 
   await db.saveSession(tenantId, phone, {
-    state: STATES.CHOOSING_CANCEL,
+    state: cancelMode ? STATES.CHOOSING_CANCEL : STATES.VIEWING_APPOINTMENTS,
     clientName: session.clientName,
     appointments
   })
@@ -414,7 +416,9 @@ async function showAppointments(phone, session, cancelMode = false, tenantId, wa
     message += `*${i + 1}.* ${a.service} · ${a.date} · ${a.time} · ${STATUS_LABEL[a.status] || a.status}\n`
   })
 
-  message += '\n_Responde con el número para cancelar esa cita, o escribe *menu* para volver._'
+  message += cancelMode
+    ? '\n_Responde con el número para cancelar esa cita, o escribe *menu* para volver._'
+    : '\n_Escribe *menu* para volver al inicio._'
   await wa.sendText(phone, message, waConfig)
 }
 

@@ -235,23 +235,4 @@ async function getDaySchedule(tenantId, dateStr) {
   return { dayActive: true, slots }
 }
 
-function formatDaysMessage(availableDays) {
-  let message = '📅 *¿Qué día te viene bien?*\n\n'
-  availableDays.forEach((day, i) => {
-    const n = day.slots.length
-    message += `*${i + 1}.* ${day.date}  _(${n} horario${n === 1 ? '' : 's'} libre${n === 1 ? '' : 's'})_\n`
-  })
-  message += '\n_Responde con el número del día que prefieras._'
-  return { message }
-}
-
-function formatDaySlotsMessage(day) {
-  let message = `🕐 *Horarios para ${day.date}*\n\n`
-  day.slots.forEach((slot, i) => {
-    message += `*${i + 1}.* ${slot.label}\n`
-  })
-  message += '\n_Responde con el número del horario que prefieras, o escribe *atrás* para elegir otro día._'
-  return { message }
-}
-
-module.exports = { getAvailableSlots, getDaySchedule, isSlotTaken, formatDaysMessage, formatDaySlotsMessage, formatDate, formatTime }
+module.exports = { getAvailableSlots, getDaySchedule, isSlotTaken, formatDate, formatTime }
