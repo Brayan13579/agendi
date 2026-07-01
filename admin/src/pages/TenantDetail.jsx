@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getTenant, updateTenant, setTenantActive, resetTenantPassword } from '../services/api'
 
@@ -12,6 +12,8 @@ export default function TenantDetail() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [newPassword, setNewPassword] = useState(null)
+
+  const flashTimer = useRef(null)
 
   const [form, setForm] = useState({
     name: '',
@@ -47,8 +49,11 @@ export default function TenantDetail() {
   function flash(msg, isError = false) {
     if (isError) { setError(msg); setSuccess('') }
     else { setSuccess(msg); setError('') }
-    setTimeout(() => { setError(''); setSuccess('') }, 4000)
+    clearTimeout(flashTimer.current)
+    flashTimer.current = setTimeout(() => { setError(''); setSuccess('') }, 4000)
   }
+
+  useEffect(() => () => clearTimeout(flashTimer.current), [])
 
   async function handleSave(e) {
     e.preventDefault()
@@ -179,7 +184,14 @@ export default function TenantDetail() {
                   <code style={{ fontSize: 24, color: 'var(--gold)', fontWeight: 700 }}>
                     {newPassword}
                   </code>
-                  <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => navigator.clipboard.writeText(newPassword).then(() => flash('Contraseña copiada'))}
+                    style={{ marginTop: 10, padding: '6px 16px', fontSize: 13 }}
+                  >
+                    Copiar
+                  </button>
+                  <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}>
                     ⚠️ Cópiala ahora — no se mostrará de nuevo
                   </div>
                 </div>

@@ -22,13 +22,15 @@ export default function Dashboard() {
   }
 
   async function toggleActive(tenant) {
+    const action = tenant.active ? 'suspender' : 'activar'
+    if (!window.confirm(`¿Seguro que deseas ${action} "${tenant.name}"?`)) return
+    const newActive = !tenant.active
+    setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, active: newActive } : t))
     try {
-      await setTenantActive(tenant.id, !tenant.active)
-      setTenants(prev => prev.map(t =>
-        t.id === tenant.id ? { ...t, active: !t.active } : t
-      ))
+      await setTenantActive(tenant.id, newActive)
     } catch {
-      alert('Error actualizando el estado')
+      setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, active: tenant.active } : t))
+      setError('Error actualizando el estado')
     }
   }
 

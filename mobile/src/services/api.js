@@ -1,5 +1,6 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { navigate } from '../navigation/navigationService'
 
 // URL del backend desplegado — cambiar si cambia el servidor
 const API_BASE_URL = 'https://agendi-production.up.railway.app'
@@ -17,12 +18,13 @@ api.interceptors.request.use(async (config) => {
   return config
 })
 
-// Si el servidor responde 401 (sesión expirada), vuelve al login
+// Si el servidor responde 401 (sesión expirada), borra el token y vuelve al login
 api.interceptors.response.use(
   res => res,
   async (error) => {
     if (error.response?.status === 401) {
       await AsyncStorage.removeItem('AUTH_TOKEN')
+      navigate('Login')
     }
     return Promise.reject(error)
   }

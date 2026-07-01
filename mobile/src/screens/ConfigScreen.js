@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Switch,
-  TouchableOpacity, ActivityIndicator, TextInput
+  TouchableOpacity, ActivityIndicator, TextInput, Image
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBotConfig, updateBotConfig } from '../services/api'
 import { colors, spacing, radius, fonts } from '../services/theme'
-import { Image } from 'react-native'
 import { FadeInUp, PressScale } from '../components/Motion'
 
 const logoGold = require('../assets/images/logo-gold.png')

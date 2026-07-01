@@ -5,8 +5,7 @@ import {
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg'
-import { login, setupAccount, requestOTP, verifyOTP, resetPassword } from '../services/api'
-import { initApi } from '../services/api'
+import { login, setupAccount, requestOTP, verifyOTP, resetPassword, initApi } from '../services/api'
 import { colors, spacing, radius, fonts } from '../services/theme'
 import { FadeInUp, PressScale } from '../components/Motion'
 import alert from '../services/alert'
@@ -66,12 +65,7 @@ export default function LoginScreen({ navigation }) {
       navigation.replace('Main')
     } catch (e) {
       const msg = e.response?.data?.error || 'No se pudo conectar al servidor.'
-      // Si no hay usuarios aún, ofrecer setup inicial
-      if (e.response?.status === 401 && msg === 'Credenciales incorrectas') {
-        alert.alert('Error', msg)
-      } else {
-        alert.alert('Error', msg)
-      }
+      alert.alert('Error', msg)
     } finally {
       setLoading(false)
     }

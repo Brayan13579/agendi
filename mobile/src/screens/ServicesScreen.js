@@ -61,7 +61,7 @@ export default function ServicesScreen() {
         name: form.name.trim(),
         price: Number(form.price),
         duration: Number(form.duration),
-        active: true
+        active: form.active
       }
       if (editing) {
         await updateService(editing.id, data)

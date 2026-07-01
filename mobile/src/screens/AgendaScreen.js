@@ -24,15 +24,6 @@ const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000
 // calcular el progreso de scroll de la animación parallax del hero.
 const HERO_HEIGHT = 250
 
-// Transición CSS suave para el cambio de tamaño "compacto" del bloque fijo.
-// Anima los cambios de tamaño en lugar de aplicarlos de golpe, evitando el
-// salto brusco que dispara el scroll-anchoring del navegador.
-const sizeTransition = {
-  transitionProperty: 'padding, margin, gap, height, width, font-size, border-radius, opacity',
-  transitionDuration: '300ms',
-  transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-}
-
 const STATUS_COLORS = {
   confirmed: colors.success,
   pending: colors.pending,
@@ -208,9 +199,9 @@ export default function AgendaScreen() {
     () => slots.filter(s => s.status === 'booked' && s.appointment?.status !== 'cancelled'),
     [slots]
   )
-  const confirmedCount = bookedSlots.filter(s => s.appointment.status === 'confirmed').length
-  const pendingCount = bookedSlots.filter(s => s.appointment.status === 'pending').length
-  const revenue = bookedSlots.reduce((sum, s) => sum + (s.appointment.servicePrice || 0), 0)
+  const confirmedCount = bookedSlots.filter(s => s.appointment?.status === 'confirmed').length
+  const pendingCount = bookedSlots.filter(s => s.appointment?.status === 'pending').length
+  const revenue = bookedSlots.reduce((sum, s) => sum + (s.appointment?.servicePrice || 0), 0)
 
   const totalSlots = slots.length
   const occupiedSlots = slots.filter(s => s.status !== 'free').length

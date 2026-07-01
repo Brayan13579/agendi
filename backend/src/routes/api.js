@@ -144,9 +144,16 @@ router.post('/services', async (req, res) => {
 router.put('/services/:id', async (req, res) => {
   try {
     const { name, price, duration, active, order } = req.body
-    await col(req.tenantId, 'services').doc(req.params.id).update({
-      name, price, duration, active, order
-    })
+    const update = {}
+    if (name !== undefined) update.name = name
+    if (price !== undefined) update.price = price
+    if (duration !== undefined) update.duration = duration
+    if (active !== undefined) update.active = active
+    if (order !== undefined) update.order = order
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ error: 'No hay campos para actualizar' })
+    }
+    await col(req.tenantId, 'services').doc(req.params.id).update(update)
     res.json({ success: true })
   } catch (error) {
     console.error(error)
@@ -195,7 +202,11 @@ router.get('/schedule', async (req, res) => {
 // PUT /api/schedule
 router.put('/schedule', async (req, res) => {
   try {
-    await col(req.tenantId, 'schedules').doc('default').set(req.body, { merge: true })
+    const { weeklySchedule, slotDuration } = req.body
+    const update = {}
+    if (weeklySchedule !== undefined) update.weeklySchedule = weeklySchedule
+    if (slotDuration !== undefined) update.slotDuration = slotDuration
+    await col(req.tenantId, 'schedules').doc('default').set(update, { merge: true })
     res.json({ success: true })
   } catch (error) {
     console.error(error)
@@ -296,7 +307,13 @@ router.get('/bot-config', async (req, res) => {
 // PUT /api/bot-config
 router.put('/bot-config', async (req, res) => {
   try {
-    await col(req.tenantId, 'botConfig').doc('default').set(req.body, { merge: true })
+    const { botActive, keywords, reminderHours, welcomeMessage } = req.body
+    const update = {}
+    if (botActive !== undefined) update.botActive = botActive
+    if (keywords !== undefined) update.keywords = keywords
+    if (reminderHours !== undefined) update.reminderHours = reminderHours
+    if (welcomeMessage !== undefined) update.welcomeMessage = welcomeMessage
+    await col(req.tenantId, 'botConfig').doc('default').set(update, { merge: true })
     res.json({ success: true })
   } catch (error) {
     console.error(error)

@@ -14,7 +14,7 @@ function formatDate(date) {
 
 function formatTime(hour, minute) {
   const h = hour % 12 || 12
-  const m = minute === 0 ? '00' : minute
+  const m = String(minute).padStart(2, '0')
   const ampm = hour < 12 ? 'am' : 'pm'
   return `${h}:${m} ${ampm}`
 }
