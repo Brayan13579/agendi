@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npx expo export --platform web && node scripts/fix-web-export.js",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
