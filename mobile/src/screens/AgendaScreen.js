@@ -24,6 +24,12 @@ const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000
 // calcular el progreso de scroll de la animación parallax del hero.
 const HERO_HEIGHT = 250
 
+const sizeTransition = {
+  transitionProperty: 'padding, margin, gap, height, width, font-size, border-radius, opacity',
+  transitionDuration: '300ms',
+  transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+}
+
 const STATUS_COLORS = {
   confirmed: colors.success,
   pending: colors.pending,
