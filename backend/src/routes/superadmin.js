@@ -110,17 +110,23 @@ router.put('/tenants/:id', async (req, res) => {
     if (whatsappToken) updates.whatsappToken = whatsappToken
     if (adminPhone !== undefined) updates.adminPhone = adminPhone
 
-    // Si cambia el adminPhone, actualizar el userIndex para que el nuevo número pueda loguear
+    let tempPassword = null
     if (adminPhone !== undefined) {
       const tenant = await db.getTenant(req.params.id)
       if (tenant && tenant.adminPhone && tenant.adminPhone !== adminPhone) {
+        // Migrar userIndex: quitar el viejo, agregar el nuevo
         await db.deleteUserIndex(tenant.adminPhone)
         await db.setUserIndex(adminPhone, req.params.id)
+        // Migrar documento de usuario: borrar el viejo, crear el nuevo con contraseña temporal
+        await db.deleteUser(req.params.id, tenant.adminPhone)
+        tempPassword = randomBytes(4).toString('hex')
+        const hash = await bcrypt.hash(tempPassword, BCRYPT_ROUNDS)
+        await db.createUser(req.params.id, adminPhone, hash)
       }
     }
 
     await db.updateTenant(req.params.id, updates)
-    res.json({ success: true })
+    res.json({ success: true, ...(tempPassword ? { tempPassword, adminPhone } : {}) })
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: 'Error interno' })

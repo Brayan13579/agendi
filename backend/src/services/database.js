@@ -161,6 +161,10 @@ async function updateUserPassword(tenantId, phone, passwordHash) {
   })
 }
 
+async function deleteUser(tenantId, phone) {
+  await col(tenantId, 'users').doc(phone).delete()
+}
+
 async function tenantUsersExist(tenantId) {
   const snap = await col(tenantId, 'users').limit(1).get()
   return !snap.empty
@@ -310,6 +314,7 @@ module.exports = {
   // Usuarios tenant
   getUserByPhone,
   createUser,
+  deleteUser,
   updateUserPassword,
   tenantUsersExist,
   // OTP
