@@ -98,8 +98,8 @@ export default function TenantDetail() {
   return (
     <div style={styles.page}>
       {/* Header */}
-      <header style={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <header className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn-secondary" onClick={() => navigate('/')} style={{ padding: '6px 12px' }}>
             ← Panel
           </button>
@@ -110,22 +110,22 @@ export default function TenantDetail() {
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="header-actions">
           <button
             className={tenant?.active ? 'btn-danger' : 'btn-success'}
             onClick={handleToggleActive}
             style={{ padding: '8px 16px' }}
           >
-            {tenant?.active ? 'Suspender negocio' : 'Activar negocio'}
+            {tenant?.active ? 'Suspender' : 'Activar'}
           </button>
         </div>
       </header>
 
-      <main style={styles.main}>
+      <main className="page-main" style={{ maxWidth: 1000 }}>
         {error && <div className="error-msg">{error}</div>}
         {success && <div className="success-msg">{success}</div>}
 
-        <div style={styles.grid}>
+        <div className="tenant-grid">
           {/* Formulario de edición */}
           <div className="card">
             <h2 style={styles.sectionTitle}>Datos del negocio</h2>

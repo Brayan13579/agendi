@@ -45,7 +45,7 @@ export default function Dashboard() {
   return (
     <div style={styles.page}>
       {/* Header */}
-      <header style={styles.header}>
+      <header className="page-header">
         <div style={styles.headerLeft}>
           <span style={styles.headerLogo}>
             <span style={{ color: 'var(--gold)', fontWeight: 700 }}>A</span>gendi
@@ -57,9 +57,9 @@ export default function Dashboard() {
         </button>
       </header>
 
-      <main style={styles.main}>
+      <main className="page-main" style={{ maxWidth: 1100 }}>
         {/* Stats */}
-        <div style={styles.stats}>
+        <div className="stats-grid">
           <div className="card" style={styles.stat}>
             <div style={styles.statNum}>{tenants.length}</div>
             <div style={styles.statLabel}>Negocios totales</div>
@@ -99,6 +99,7 @@ export default function Dashboard() {
           )}
 
           {!loading && tenants.length > 0 && (
+            <div className="table-wrap">
             <table style={styles.table}>
               <thead>
                 <tr style={styles.thead}>
@@ -141,6 +142,7 @@ export default function Dashboard() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </main>
