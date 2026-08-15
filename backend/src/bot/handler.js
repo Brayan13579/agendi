@@ -27,8 +27,6 @@ async function handleMessage(phone, messageText, tenantId, waConfig = {}) {
   const keywords = config.keywords || BOT_KEYWORDS
   const isKeyword = keywords.some(k => text.includes(k.toLowerCase()))
 
-  if (!session && !isKeyword) return
-
   if ((text === 'cancelar' || text === 'cancel') && session?.state !== STATES.ASKING_NAME) {
     const inBookingFlow = session && [
       STATES.CHOOSING_SERVICE, STATES.CHOOSING_DAY,
@@ -54,7 +52,12 @@ async function handleMessage(phone, messageText, tenantId, waConfig = {}) {
     return startFlow(phone, config, tenantId, waConfig)
   }
 
-  if (isKeyword && session.state !== STATES.ASKING_NAME && session.state !== STATES.CHANGING_NAME) {
+  const IN_FLOW_STATES = [
+    STATES.CHOOSING_SERVICE, STATES.CHOOSING_DAY,
+    STATES.CHOOSING_SLOT, STATES.CONFIRMING, STATES.CHOOSING_CANCEL
+  ]
+  if (isKeyword && !IN_FLOW_STATES.includes(session.state) &&
+      session.state !== STATES.ASKING_NAME && session.state !== STATES.CHANGING_NAME) {
     const client = await db.getClient(tenantId, phone)
     if (client) return showMainMenu(phone, client.name, tenantId, waConfig)
     return startFlow(phone, config, tenantId, waConfig)
