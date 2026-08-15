@@ -5,7 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { ActivityIndicator, View, Text, Platform, Image } from 'react-native'
+import { ActivityIndicator, View, Text, Image } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { initApi } from '../services/api'
 
 import LoginScreen from '../screens/LoginScreen'
@@ -28,6 +29,9 @@ const SCREEN_TITLES = {
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets()
+  const tabBottom = Math.max(insets.bottom, 8) + 12
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -48,7 +52,7 @@ function MainTabs() {
           position: 'absolute',
           left: 16,
           right: 16,
-          bottom: Platform.OS === 'ios' ? 24 : 16,
+          bottom: tabBottom,
           height: 64,
           borderRadius: 24,
           backgroundColor: colors.bgElevated,
