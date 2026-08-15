@@ -147,6 +147,8 @@ async function handleMainMenu(phone, text, session, tenantId, waConfig) {
 
 // ─── AGENDAR ─────────────────────────────────────────────────
 
+const SERVICES_PAGE_SIZE = 8
+
 async function startBooking(phone, session, tenantId, waConfig) {
   const services = await db.getServices(tenantId)
 
@@ -158,21 +160,37 @@ async function startBooking(phone, session, tenantId, waConfig) {
   await db.saveSession(tenantId, phone, {
     state: STATES.CHOOSING_SERVICE,
     clientName: session.clientName,
-    services
+    services,
+    servicePage: 0
   })
+
+  await showServicesPage(phone, services, 0, waConfig)
+}
+
+async function showServicesPage(phone, services, page, waConfig) {
+  const start = page * SERVICES_PAGE_SIZE
+  const pageServices = services.slice(start, start + SERVICES_PAGE_SIZE)
+  const hasPrev = page > 0
+  const hasNext = start + SERVICES_PAGE_SIZE < services.length
+
+  const rows = pageServices.map((s, i) => ({
+    id: `svc_${start + i}`,
+    title: s.name,
+    description: `$${s.price} · ${s.duration} min`
+  }))
+
+  if (hasPrev) rows.push({ id: 'svc_prev', title: '← Ver anteriores' })
+  if (hasNext) rows.push({ id: 'svc_next', title: `Ver más →`, description: `${services.length - start - SERVICES_PAGE_SIZE} servicios más` })
+
+  const label = services.length > SERVICES_PAGE_SIZE
+    ? ` (${start + 1}–${start + pageServices.length} de ${services.length})`
+    : ''
 
   await wa.sendList(
     phone,
-    '✂️ ¿Qué servicio quieres?',
+    `✂️ ¿Qué servicio quieres?${label}`,
     'Ver servicios',
-    [{
-      title: 'Servicios',
-      rows: services.slice(0, 10).map((s, i) => ({
-        id: `svc_${i}`,
-        title: s.name,
-        description: `$${s.price} · ${s.duration} min`
-      }))
-    }],
+    [{ title: 'Servicios', rows }],
     undefined,
     waConfig
   )
@@ -180,8 +198,20 @@ async function startBooking(phone, session, tenantId, waConfig) {
 
 async function handleServiceChoice(phone, text, session, tenantId, waConfig) {
   const services = session.services
-  let index
+  const page = session.servicePage || 0
 
+  if (text === 'svc_next') {
+    const newPage = page + 1
+    await db.saveSession(tenantId, phone, { ...session, servicePage: newPage })
+    return showServicesPage(phone, services, newPage, waConfig)
+  }
+  if (text === 'svc_prev') {
+    const newPage = page - 1
+    await db.saveSession(tenantId, phone, { ...session, servicePage: newPage })
+    return showServicesPage(phone, services, newPage, waConfig)
+  }
+
+  let index
   if (text.startsWith('svc_')) {
     index = parseInt(text.replace('svc_', ''))
   } else {
