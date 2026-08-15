@@ -196,7 +196,7 @@ export default function ServicesScreen() {
             <FadeInUp delay={120} distance={10}>
               <Text style={styles.label}>Duración (minutos)</Text>
               <View style={styles.durationRow}>
-                {['15', '30', '45', '60', '90'].map(d => (
+                {['5', '10', '15', '20', '30', '40', '45', '60', '75', '90'].map(d => (
                   <PressScale
                     key={d}
                     style={[styles.durationBtn, form.duration === d && styles.durationBtnActive]}
@@ -290,9 +290,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   inputFocused: { borderColor: colors.accent, backgroundColor: colors.bgInputFocus },
-  durationRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  durationRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   durationBtn: {
-    flex: 1, paddingVertical: 12,
+    flexBasis: '18%', flexGrow: 1, paddingVertical: 10,
     borderRadius: radius.md,
     backgroundColor: colors.bgCard,
     borderWidth: 1, borderColor: colors.border,

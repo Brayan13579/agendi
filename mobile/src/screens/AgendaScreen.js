@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
-  View, Text, StyleSheet,
+  View, Text, StyleSheet, ScrollView,
   RefreshControl, ActivityIndicator, Linking, Animated, Easing, AccessibilityInfo,
-  LayoutAnimation, UIManager, Platform
+  LayoutAnimation, UIManager, Platform, Dimensions
 } from 'react-native'
 
 if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)
@@ -26,6 +26,11 @@ const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000
 // Alto del bloque hero (debe coincidir con styles.heroBleed.height) — usado para
 // calcular el progreso de scroll de la animación parallax del hero.
 const HERO_HEIGHT = 250
+
+const { width: SCREEN_W } = Dimensions.get('window')
+const STRIP_W = SCREEN_W - spacing.md * 2
+const WEEKS_BEFORE = 4
+const WEEKS_TOTAL = 12
 
 const sizeTransition = {
   transitionProperty: 'padding, margin, gap, height, width, font-size, border-radius, opacity',
@@ -86,6 +91,33 @@ export default function AgendaScreen() {
   const [reduceMotion, setReduceMotion] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
   const scrollY = useRef(new Animated.Value(0)).current
+  const weekStripRef = useRef(null)
+  const isScrolledByUser = useRef(false)
+
+  const weekGroups = useMemo(() => {
+    const todayWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+    return Array.from({ length: WEEKS_TOTAL }, (_, wi) => {
+      const weekStart = addDays(todayWeekStart, (wi - WEEKS_BEFORE) * 7)
+      return Array.from({ length: 7 }, (_, di) => addDays(weekStart, di))
+    })
+  }, [])
+
+  function getWeekIdx(date) {
+    const selWeekStart = startOfWeek(date, { weekStartsOn: 1 }).getTime()
+    return weekGroups.findIndex(week =>
+      startOfWeek(week[0], { weekStartsOn: 1 }).getTime() === selWeekStart
+    )
+  }
+
+  function handleStripScrollEnd(e) {
+    isScrolledByUser.current = true
+    const page = Math.round(e.nativeEvent.contentOffset.x / STRIP_W)
+    const newWeek = weekGroups[page]
+    if (!newWeek) return
+    const currentDow = selectedDate.getDay()
+    const newDay = newWeek.find(d => d.getDay() === currentDow) || newWeek[0]
+    if (!isSameDay(newDay, selectedDate)) setSelectedDate(newDay)
+  }
 
   const loadDaySchedule = useCallback(async (date) => {
     try {
@@ -103,6 +135,17 @@ export default function AgendaScreen() {
   useEffect(() => {
     setLoading(true)
     loadDaySchedule(selectedDate)
+  }, [selectedDate])
+
+  useEffect(() => {
+    if (isScrolledByUser.current) {
+      isScrolledByUser.current = false
+      return
+    }
+    const idx = getWeekIdx(selectedDate)
+    if (idx >= 0 && weekStripRef.current) {
+      weekStripRef.current.scrollTo({ x: idx * STRIP_W, animated: true })
+    }
   }, [selectedDate])
 
   // Refresca la cuenta atrás de la próxima cita cada medio minuto
@@ -283,11 +326,6 @@ export default function AgendaScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slots, selectedDate, tick])
 
-  const weekDays = useMemo(() => {
-    const start = startOfWeek(selectedDate, { weekStartsOn: 1 })
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i))
-  }, [selectedDate])
-
   let heroEmptyState = null
   if (!heroSlot) {
     if (bookedSlots.length === 0) {
@@ -393,15 +431,6 @@ export default function AgendaScreen() {
               pointerEvents="none"
             />
 
-            <View style={styles.heroWeekNav}>
-              <PressScale style={styles.weekNavBtn} onPress={() => setSelectedDate(d => subDays(d, 7))}>
-                <Ionicons name="chevron-back" size={15} color={colors.textSecondary} />
-              </PressScale>
-              <PressScale style={styles.weekNavBtn} onPress={() => setSelectedDate(d => addDays(d, 7))}>
-                <Ionicons name="chevron-forward" size={15} color={colors.textSecondary} />
-              </PressScale>
-            </View>
-
             <Animated.View style={[styles.heroGreetingOverlay, heroTextAnimStyle]}>
               <Text style={styles.heroScript} numberOfLines={1}>{getGreeting()}</Text>
               <Text style={styles.heroBigDate} numberOfLines={1}>
@@ -418,32 +447,52 @@ export default function AgendaScreen() {
             Al hacer scroll queda pegado arriba (stickyHeaderIndices) y se compacta
             de forma animada (transition CSS) para evitar saltos de scroll. */}
         <View style={[styles.stickyBlock, isPinned && styles.stickyBlockPinned]}>
-          {/* Selector de día de la semana */}
-          <View style={[styles.weekStrip, isPinned && styles.weekStripCompact]}>
-            {weekDays.map(d => {
-                const selected = isSameDay(d, selectedDate)
-                const today = isToday(d)
-                return (
-                  <PressScale
-                    key={d.toISOString()}
-                    onPress={() => setSelectedDate(d)}
-                    style={[
-                      styles.dayPill,
-                      isPinned && styles.dayPillCompact,
-                      today && !selected && styles.dayPillToday,
-                      selected && styles.dayPillActive,
-                    ]}
-                  >
-                    <Text style={[styles.dayPillDow, selected && styles.dayPillTextActive]}>
-                      {format(d, 'EEEEE', { locale: es }).toUpperCase()}
-                    </Text>
-                    <Text style={[styles.dayPillNum, selected && styles.dayPillTextActive]}>
-                      {format(d, 'd')}
-                    </Text>
-                  </PressScale>
-                )
-              })}
-            </View>
+          {/* Selector de día — scroll horizontal por semana */}
+          <View style={[styles.weekStripOuter, isPinned && styles.weekStripCompact]}>
+            {!isPinned && (
+              <Text style={styles.weekMonthLabel}>
+                {capitalize(format(selectedDate, 'MMMM yyyy', { locale: es }))}
+              </Text>
+            )}
+            <ScrollView
+              ref={weekStripRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={STRIP_W}
+              decelerationRate="fast"
+              scrollEventThrottle={16}
+              onMomentumScrollEnd={handleStripScrollEnd}
+              style={styles.weekStrip}
+            >
+              {weekGroups.map((week, wi) => (
+                <View key={wi} style={[styles.weekPage, { width: STRIP_W }]}>
+                  {week.map(d => {
+                    const selected = isSameDay(d, selectedDate)
+                    const today = isToday(d)
+                    return (
+                      <PressScale
+                        key={d.toISOString()}
+                        onPress={() => setSelectedDate(d)}
+                        style={[
+                          styles.dayPill,
+                          isPinned && styles.dayPillCompact,
+                          today && !selected && styles.dayPillToday,
+                          selected && styles.dayPillActive,
+                        ]}
+                      >
+                        <Text style={[styles.dayPillDow, selected && styles.dayPillTextActive]}>
+                          {format(d, 'EEEEE', { locale: es }).toUpperCase()}
+                        </Text>
+                        <Text style={[styles.dayPillNum, selected && styles.dayPillTextActive]}>
+                          {format(d, 'd')}
+                        </Text>
+                      </PressScale>
+                    )
+                  })}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
 
           {/* Tarjeta destacada: próxima cita */}
           {heroSlot ? (
@@ -933,12 +982,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase', letterSpacing: 3, marginTop: 2,
   },
 
-  // Selector de día de la semana
-  weekStrip: {
-    flexDirection: 'row', gap: 4, marginBottom: spacing.md,
+  // Selector de día de la semana — scroll horizontal por semana
+  weekStripOuter: {
+    marginBottom: spacing.md,
     ...sizeTransition,
   },
   weekStripCompact: { marginBottom: spacing.xs },
+  weekMonthLabel: {
+    fontFamily: fonts.semiBold, fontSize: 10, color: colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6,
+  },
+  weekStrip: { ...sizeTransition },
+  weekPage: { flexDirection: 'row', gap: 4 },
   dayPill: {
     flex: 1, height: 56, borderRadius: radius.lg,
     alignItems: 'center', justifyContent: 'center', gap: 4,
