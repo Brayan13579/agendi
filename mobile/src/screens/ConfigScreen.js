@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
   reminderBtnActive: { backgroundColor: colors.accentDim, borderColor: colors.accent },
   reminderBtnText: { fontFamily: fonts.semiBold, color: colors.textSecondary, fontSize: 13 },
   reminderBtnTextActive: { color: colors.accent },
+  cardLabel: { fontFamily: fonts.medium, color: colors.textSecondary, fontSize: 13, marginBottom: 4 },
   welcomeInput: {
     color: colors.textPrimary, fontFamily: fonts.medium, fontSize: 14,
     textAlignVertical: 'top', minHeight: 80,
