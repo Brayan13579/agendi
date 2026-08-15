@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import {
-  View, Text, StyleSheet, ScrollView, Switch,
-  TouchableOpacity, ActivityIndicator, TextInput, Image,
-  LayoutAnimation, UIManager, Platform
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, ActivityIndicator, TextInput, Image
 } from 'react-native'
-
-if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBotConfig, updateBotConfig } from '../services/api'
@@ -20,7 +17,6 @@ export default function ConfigScreen({ navigation }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
-  const [newKeyword, setNewKeyword] = useState('')
 
   useEffect(() => { loadConfig() }, [])
 
@@ -38,27 +34,6 @@ export default function ConfigScreen({ navigation }) {
   function update(field, value) {
     setConfig(p => ({ ...p, [field]: value }))
     setHasChanges(true)
-  }
-
-  function addKeyword() {
-    const kw = newKeyword.trim().toLowerCase()
-    if (!kw) return
-    if (config.keywords.includes(kw)) {
-      alert.alert('Ya existe', 'Esa palabra clave ya está en la lista.')
-      return
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
-    update('keywords', [...config.keywords, kw])
-    setNewKeyword('')
-  }
-
-  function removeKeyword(kw) {
-    if (config.keywords.length <= 1) {
-      alert.alert('Mínimo una', 'Debe haber al menos una palabra clave.')
-      return
-    }
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
-    update('keywords', config.keywords.filter(k => k !== kw))
   }
 
   async function handleSave() {
@@ -116,67 +91,8 @@ export default function ConfigScreen({ navigation }) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
 
-        {/* Bot activo/pausado */}
-        <FadeInUp distance={12}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Estado del bot</Text>
-            <View style={styles.card}>
-              <View style={styles.cardRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.cardLabel}>Bot activo</Text>
-                  <Text style={styles.cardHint}>
-                    {config.botActive
-                      ? 'El bot responde automáticamente'
-                      : 'Modo manual — respondes tú'
-                    }
-                  </Text>
-                </View>
-                <Switch
-                  value={config.botActive}
-                  onValueChange={v => update('botActive', v)}
-                  trackColor={{ false: colors.border, true: colors.accentDim }}
-                  thumbColor={config.botActive ? colors.accent : colors.textMuted}
-                />
-              </View>
-            </View>
-          </View>
-        </FadeInUp>
-
-        {/* Palabras clave */}
-        <FadeInUp delay={70} distance={12}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Palabras que activan el bot</Text>
-            <View style={styles.card}>
-              <View style={styles.keywordsList}>
-                {config.keywords.map(kw => (
-                  <View key={kw} style={styles.keyword}>
-                    <Text style={styles.keywordText}>{kw}</Text>
-                    <TouchableOpacity onPress={() => removeKeyword(kw)}>
-                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-              <View style={styles.addKeywordRow}>
-                <TextInput
-                  style={styles.keywordInput}
-                  placeholder="Nueva palabra..."
-                  placeholderTextColor={colors.textMuted}
-                  value={newKeyword}
-                  onChangeText={setNewKeyword}
-                  onSubmitEditing={addKeyword}
-                  autoCapitalize="none"
-                />
-                <PressScale style={styles.addKeywordBtn} onPress={addKeyword}>
-                  <Ionicons name="add" size={20} color={colors.black} />
-                </PressScale>
-              </View>
-            </View>
-          </View>
-        </FadeInUp>
-
         {/* Recordatorio */}
-        <FadeInUp delay={140} distance={12}>
+        <FadeInUp delay={0} distance={12}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recordatorio automático</Text>
             <View style={styles.card}>
@@ -205,7 +121,7 @@ export default function ConfigScreen({ navigation }) {
         </FadeInUp>
 
         {/* Mensaje de bienvenida */}
-        <FadeInUp delay={210} distance={12}>
+        <FadeInUp delay={70} distance={12}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Mensaje de bienvenida</Text>
             <View style={styles.card}>
@@ -222,7 +138,7 @@ export default function ConfigScreen({ navigation }) {
         </FadeInUp>
 
         {/* Cerrar sesión */}
-        <FadeInUp delay={280} distance={12}>
+        <FadeInUp delay={140} distance={12}>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={18} color={colors.error} />
             <Text style={styles.logoutText}>Cerrar sesión</Text>
@@ -272,29 +188,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     borderRadius: radius.md, padding: spacing.md,
     borderWidth: 1, borderColor: colors.border,
-  },
-  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.textPrimary },
-  cardHint: { fontFamily: fonts.body, fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  keywordsList: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
-  keyword: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    backgroundColor: colors.accentDim,
-    borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 6,
-    borderWidth: 1, borderColor: colors.accent,
-  },
-  keywordText: { fontFamily: fonts.semiBold, color: colors.accent, fontSize: 13 },
-  addKeywordRow: { flexDirection: 'row', gap: spacing.sm },
-  keywordInput: {
-    flex: 1, backgroundColor: colors.bgInput,
-    borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 10,
-    color: colors.textPrimary, fontFamily: fonts.medium, fontSize: 14,
-    borderWidth: 1, borderColor: colors.border,
-  },
-  addKeywordBtn: {
-    width: 40, height: 40, borderRadius: radius.sm,
-    backgroundColor: colors.accent,
-    alignItems: 'center', justifyContent: 'center',
   },
   reminderRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   reminderBtn: {
