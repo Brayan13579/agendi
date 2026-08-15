@@ -91,11 +91,10 @@ async function sendConfirmation(to, appointment, waConfig = {}) {
   await sendText(to, message, waConfig)
 }
 
-async function sendReminder(to, appointment, waConfig = {}) {
-  const minutes = process.env.REMINDER_MINUTES || 30
+async function sendReminder(to, appointment, waConfig = {}, reminderMinutes = 30) {
   const message =
     `⏰ *Recordatorio*\n\n` +
-    `Hola ${appointment.clientName}, tu cita es en ${minutes} minutos.\n\n` +
+    `Hola ${appointment.clientName}, tu cita es en ${reminderMinutes} minutos.\n\n` +
     `✂️  ${appointment.service}\n` +
     `🕐 ${appointment.time}\n\n` +
     `¡Te esperamos!`

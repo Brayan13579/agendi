@@ -45,18 +45,29 @@ console.log(`Listo. ${filesPatched} archivo(s) actualizados, ${totalReplacements
 
 // Agrega flex-direction: column al #root para que React Native Web llene la pantalla completa
 // en navegadores móviles (sin esto queda espacio blanco debajo del contenido).
+// También fuerza el fondo oscuro en <body> para que no haya flash blanco mientras carga el JS.
 const indexPath = path.join(distDir, 'index.html')
 if (fs.existsSync(indexPath)) {
-  const html = fs.readFileSync(indexPath, 'utf-8')
-  const fixed = html.replace(
+  let html = fs.readFileSync(indexPath, 'utf-8')
+
+  // 1. flex-direction: column en #root
+  const withFlex = html.replace(
     /#root\s*\{([^}]*)\}/,
     (match, inner) => {
       if (inner.includes('flex-direction')) return match
       return `#root {${inner}  flex-direction: column;\n      }`
     }
   )
-  if (fixed !== html) {
-    fs.writeFileSync(indexPath, fixed)
-    console.log('Parcheado index.html: añadido flex-direction: column a #root')
+
+  // 2. Fondo oscuro en body/html para que no aparezca blanco mientras JS carga
+  const BG = '#121110'
+  const bgTag = `<style>html,body{background:${BG};margin:0;padding:0}</style>`
+  const withBg = withFlex.includes(BG)
+    ? withFlex
+    : withFlex.replace('</head>', `${bgTag}</head>`)
+
+  if (withBg !== html) {
+    fs.writeFileSync(indexPath, withBg)
+    console.log('Parcheado index.html: flex-direction + fondo oscuro')
   }
 }

@@ -78,7 +78,7 @@ async function checkRemindersForTenant(tenant) {
 
     try {
       await db.markReminderSent(tenantId, appointment.id)
-      await wa.sendReminder(appointment.clientPhone, appointment, waConfig)
+      await wa.sendReminder(appointment.clientPhone, appointment, waConfig, reminderMinutes)
       console.log(`✅ [${tenant.name}] Recordatorio enviado a ${appointment.clientName}`)
     } catch (error) {
       console.error(`❌ [${tenant.name}] Error con ${appointment.clientName}:`, error.message)

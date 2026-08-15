@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg'
-import { login, setupAccount, requestOTP, verifyOTP, resetPassword, initApi } from '../services/api'
+import { login, requestOTP, verifyOTP, resetPassword, initApi } from '../services/api'
 import { colors, spacing, radius, fonts } from '../services/theme'
 import { FadeInUp, PressScale } from '../components/Motion'
 import alert from '../services/alert'
@@ -19,10 +19,9 @@ const BG_LOGO_HEIGHT = BG_LOGO_WIDTH / LOGO_RATIO
 const MARK_WIDTH = Math.min(SCREEN_W * 0.55, 240)
 const MARK_HEIGHT = MARK_WIDTH
 
-// 'login' | 'setup' | 'otp-phone' | 'otp-code' | 'otp-newpass'
+// 'login' | 'otp-phone' | 'otp-code' | 'otp-newpass'
 const VIEWS = {
   LOGIN: 'login',
-  SETUP: 'setup',
   OTP_PHONE: 'otp-phone',
   OTP_CODE: 'otp-code',
   OTP_NEWPASS: 'otp-newpass',
@@ -37,7 +36,7 @@ export default function LoginScreen({ navigation }) {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
 
-  // OTP flow
+  // OTP flow (recuperar / primer acceso)
   const [otpPhone, setOtpPhone] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [resetToken, setResetToken] = useState('')
@@ -71,34 +70,7 @@ export default function LoginScreen({ navigation }) {
     }
   }
 
-  // ── PRIMER ACCESO (SETUP) ────────────────────────────────────
-
-  async function handleSetup() {
-    if (!phone || !password || !confirmPassword) {
-      return alert.alert('Campos requeridos', 'Completa todos los campos.')
-    }
-    if (password !== confirmPassword) {
-      return alert.alert('Error', 'Las contraseñas no coinciden.')
-    }
-    if (password.length < 6) {
-      return alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.')
-    }
-    setLoading(true)
-    try {
-      const normalized = normalizePhone(phone)
-      const data = await setupAccount(normalized, password)
-      await AsyncStorage.setItem('AUTH_TOKEN', data.token)
-      await initApi()
-      navigation.replace('Main')
-    } catch (e) {
-      const msg = e.response?.data?.error || 'Error al crear la cuenta.'
-      alert.alert('Error', msg)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ── PASO 1 RECUPERAR: pedir teléfono y enviar OTP ────────────
+  // ── PASO 1 RECUPERAR / PRIMER ACCESO: pedir teléfono y enviar OTP ────────────
 
   async function handleRequestOTP() {
     if (!otpPhone) {
@@ -145,8 +117,8 @@ export default function LoginScreen({ navigation }) {
     if (newPassword !== confirmPassword) {
       return alert.alert('Error', 'Las contraseñas no coinciden.')
     }
-    if (newPassword.length < 6) {
-      return alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.')
+    if (newPassword.length < 8) {
+      return alert.alert('Error', 'La contraseña debe tener al menos 8 caracteres.')
     }
     setLoading(true)
     try {
@@ -210,75 +182,17 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.linkSecondary} onPress={() => setView(VIEWS.SETUP)}>
+          <TouchableOpacity style={styles.linkSecondary} onPress={() => { setOtpPhone(phone); setView(VIEWS.OTP_PHONE) }}>
             <Text style={styles.linkSecondaryText}>Primer acceso →</Text>
           </TouchableOpacity>
         </FadeInUp>
       </>
     )
 
-    if (view === VIEWS.SETUP) return (
-      <FadeInUp distance={20} style={styles.form}>
-        <Text style={styles.formTitle}>CREAR CUENTA</Text>
-        <Text style={styles.formSubtitle}>Solo disponible si no hay cuenta registrada</Text>
-
-        <Text style={styles.label}>NÚMERO DE CELULAR</Text>
-        <TextInput
-          style={[styles.input, focused === 'phone' && styles.inputFocused]}
-          placeholder="3001234567"
-          placeholderTextColor={colors.textMuted}
-          value={phone}
-          onChangeText={setPhone}
-          onFocus={() => setFocused('phone')}
-          onBlur={() => setFocused(null)}
-          keyboardType="phone-pad"
-        />
-
-        <Text style={styles.label}>CONTRASEÑA</Text>
-        <TextInput
-          style={[styles.input, focused === 'pass' && styles.inputFocused]}
-          placeholder="Mínimo 6 caracteres"
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-          onFocus={() => setFocused('pass')}
-          onBlur={() => setFocused(null)}
-          secureTextEntry
-        />
-
-        <Text style={styles.label}>CONFIRMAR CONTRASEÑA</Text>
-        <TextInput
-          style={[styles.input, focused === 'confirm' && styles.inputFocused]}
-          placeholder="Repite la contraseña"
-          placeholderTextColor={colors.textMuted}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          onFocus={() => setFocused('confirm')}
-          onBlur={() => setFocused(null)}
-          secureTextEntry
-        />
-
-        <PressScale
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSetup}
-          disabled={loading}
-        >
-          {loading
-            ? <ActivityIndicator color={colors.black} />
-            : <Text style={styles.buttonText}>CREAR CUENTA</Text>
-          }
-        </PressScale>
-
-        <TouchableOpacity style={styles.link} onPress={() => setView(VIEWS.LOGIN)}>
-          <Text style={styles.linkText}>← Volver al login</Text>
-        </TouchableOpacity>
-      </FadeInUp>
-    )
-
     if (view === VIEWS.OTP_PHONE) return (
       <FadeInUp distance={20} style={styles.form}>
         <Text style={styles.formTitle}>RECUPERAR ACCESO</Text>
-        <Text style={styles.formSubtitle}>Te enviaremos un código por WhatsApp</Text>
+        <Text style={styles.formSubtitle}>Te enviaremos un código por WhatsApp al número del negocio</Text>
 
         <Text style={styles.label}>TU NÚMERO DE CELULAR</Text>
         <TextInput
@@ -352,7 +266,7 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.label}>NUEVA CONTRASEÑA</Text>
         <TextInput
           style={[styles.input, focused === 'new' && styles.inputFocused]}
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres"
           placeholderTextColor={colors.textMuted}
           value={newPassword}
           onChangeText={setNewPassword}
