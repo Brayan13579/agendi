@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Switch,
-  TouchableOpacity, ActivityIndicator, LayoutAnimation, UIManager, Platform
+  ActivityIndicator, LayoutAnimation, UIManager, Platform
 } from 'react-native'
 
 if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)

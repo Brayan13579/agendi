@@ -9,7 +9,7 @@ if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Rect, Defs, RadialGradient, Stop } from 'react-native-svg'
-import { format, addDays, subDays, startOfWeek, startOfDay, isToday, isSameDay } from 'date-fns'
+import { format, addDays, startOfWeek, startOfDay, isToday, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getDaySchedule, updateAppointmentStatus, sendUrgentAlert, addBlockedSlot, removeBlockedSlot } from '../services/api'
 import { colors, spacing, radius, fonts, shadow } from '../services/theme'
@@ -261,8 +261,6 @@ export default function AgendaScreen() {
   )
   const confirmedCount = bookedSlots.filter(s => s.appointment?.status === 'confirmed').length
   const pendingCount = bookedSlots.filter(s => s.appointment?.status === 'pending').length
-  const revenue = bookedSlots.reduce((sum, s) => sum + (s.appointment?.servicePrice || 0), 0)
-
   const totalSlots = slots.length
   const occupiedSlots = slots.filter(s => s.status !== 'free').length
   const occupancyPercent = totalSlots > 0 ? (occupiedSlots / totalSlots) * 100 : 0
@@ -273,10 +271,6 @@ export default function AgendaScreen() {
 
   const now = new Date()
   const nowFake = Date.now() - BOGOTA_OFFSET_MS
-  const attendedCount = bookedSlots.filter(s => {
-    const end = new Date(s.datetime).getTime() + (s.appointment.duration || 30) * 60000
-    return s.appointment.status === 'confirmed' && end <= nowFake
-  }).length
 
   const todayStart = startOfDay(now).getTime()
   const selStart = startOfDay(selectedDate).getTime()
@@ -287,7 +281,7 @@ export default function AgendaScreen() {
     if (isPastDay) return null
     if (isFutureDay) return bookedSlots[0] || null
     return bookedSlots.find(s => {
-      const end = new Date(s.datetime).getTime() + (s.appointment.duration || 30) * 60000
+      const end = new Date(s.datetime).getTime() + (s.appointment?.duration || 30) * 60000
       return end > Date.now() - BOGOTA_OFFSET_MS
     }) || null
     // eslint-disable-next-line react-hooks/exhaustive-deps
