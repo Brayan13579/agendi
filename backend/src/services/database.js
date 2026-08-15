@@ -106,10 +106,11 @@ async function markReminderSent(tenantId, appointmentId) {
 async function getServices(tenantId) {
   const snapshot = await col(tenantId, 'services')
     .where('active', '==', true)
-    .orderBy('order')
     .get()
 
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  return snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name))
 }
 
 // ─── HORARIOS ────────────────────────────────────────────────

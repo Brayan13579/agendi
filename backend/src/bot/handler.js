@@ -150,7 +150,14 @@ async function handleMainMenu(phone, text, session, tenantId, waConfig) {
 const SERVICES_PAGE_SIZE = 8
 
 async function startBooking(phone, session, tenantId, waConfig) {
-  const services = await db.getServices(tenantId)
+  let services
+  try {
+    services = await db.getServices(tenantId)
+  } catch (err) {
+    console.error('❌ Error cargando servicios:', err.message)
+    await wa.sendText(phone, 'Hubo un error cargando los servicios. Intenta de nuevo en un momento.', waConfig)
+    return
+  }
 
   if (services.length === 0) {
     await wa.sendText(phone, 'Lo siento, no hay servicios disponibles en este momento. Intenta más tarde.', waConfig)
@@ -175,7 +182,7 @@ async function showServicesPage(phone, services, page, waConfig) {
 
   const rows = pageServices.map((s, i) => ({
     id: `svc_${start + i}`,
-    title: s.name,
+    title: s.name.length > 24 ? s.name.slice(0, 23) + '…' : s.name,
     description: `$${s.price} · ${s.duration} min`
   }))
 
